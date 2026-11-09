@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Open notes.md of the current challenge (or the global scratch log).
+f="$HOME/ctf/current/notes.md"
+[ -f "$f" ] || { mkdir -p "$HOME/ctf"; f="$HOME/ctf/scratch.md"; }
+exec kitty --class ashfall-notes -d "$(dirname "$f")" -e "${EDITOR:-nvim}" "$f"

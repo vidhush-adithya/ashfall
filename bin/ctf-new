@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# ctf-new — scaffold a challenge workspace and jump into it.
+#   ctf-new                      (asks via fuzzel)
+#   ctf-new <event> <name> <cat> (from a terminal)
+set -euo pipefail
+ROOT="$HOME/ctf"
+ask() { fuzzel --dmenu --prompt "  $1 ❯ " --lines "${2:-0}" --placeholder "${3:-}"; }
+
+event="${1:-}"; name="${2:-}"; cat="${3:-}"
+if [ -z "$event" ]; then
+  last=$(basename "$(dirname "$(readlink -f "$ROOT/current" 2>/dev/null || echo /x/x)")")
+  event=$( { [ -n "$last" ] && [ "$last" != "x" ] && echo "$last"; ls -1t "$ROOT" 2>/dev/null | grep -v '^current$'; } | awk '!s[$0]++' | ask "event" 6 "event name")
+fi
+[ -z "$name" ] && name=$(ask "challenge" 0 "challenge name")
+[ -z "$cat" ]  && cat=$(printf 'pwn\nrev\nweb\ncrypto\nforensics\nmisc\nosint\n' | ask "category" 7)
+[ -z "$event" ] || [ -z "$name" ] && exit 1
+slug() { echo "$1" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9._-'; }
+dir="$ROOT/$(slug "$event")/$(slug "${cat:-misc}")-$(slug "$name")"
+mkdir -p "$dir"/{files,loot}
+
+[ -f "$dir/notes.md" ] || cat > "$dir/notes.md" <<EOF
+# $name   [$cat]  —  $event
+date: $(date '+%Y-%m-%d %H:%M')
+
+## Description
+
+## Recon / observations
+-
+
+## Attempts
+-
+
+## Solution
+
+## Flag
+\`\`\`
+\`\`\`
+EOF
+
+if [ "$cat" = "pwn" ] && [ ! -f "$dir/solve.py" ]; then
+cat > "$dir/solve.py" <<'EOF'
+#!/usr/bin/env python3
+from pwn import *
+
+exe = context.binary = ELF(args.EXE or './files/chall', checksec=False)
+# libc = ELF('./files/libc.so.6', checksec=False)
+context.terminal = ['kitty', '@', 'launch', '--location=vsplit', '--cwd=current']
+HOST, PORT = args.HOST or 'localhost', int(args.PORT or 1337)
+
+gdbscript = '''
+b main
+continue
+'''
+
+def start():
+    if args.REMOTE:
+        return remote(HOST, PORT)
+    if args.GDB:
+        return gdb.debug([exe.path], gdbscript=gdbscript)
+    return process([exe.path])
+
+io = start()
+
+io.interactive()
+EOF
+chmod +x "$dir/solve.py"
+elif [ "$cat" = "web" ] && [ ! -f "$dir/solve.py" ]; then
+cat > "$dir/solve.py" <<'EOF'
+#!/usr/bin/env python3
+import requests, re, sys
+URL = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8080"
+s = requests.Session()
+s.proxies = {"http": "http://127.0.0.1:8080", "https": "http://127.0.0.1:8080"} if "--burp" in sys.argv else {}
+s.verify = False
+
+r = s.get(URL)
+print(r.status_code, len(r.text))
+print(re.findall(r"[A-Za-z0-9_]{2,15}\{[^}\s]{3,}\}", r.text))
+EOF
+elif [ "$cat" = "crypto" ] && [ ! -f "$dir/solve.py" ]; then
+cat > "$dir/solve.py" <<'EOF'
+#!/usr/bin/env python3
+from Crypto.Util.number import long_to_bytes, bytes_to_long, inverse
+from math import gcd, isqrt
+
+EOF
+fi
+
+ln -sfn "$dir" "$ROOT/current"
+notify-send -a ASHFALL "challenge armed" "$dir" 2>/dev/null || true
+if [ -t 1 ]; then echo "$dir"; else kitty -d "$dir" & fi

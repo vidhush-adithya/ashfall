@@ -1,0 +1,94 @@
+// ASHFALL waybar — terminal readout style, no icons font required
+{
+  "layer": "top",
+  "position": "top",
+  "height": 28,
+  "spacing": 0,
+  "margin-top": 6,
+  "margin-left": 10,
+  "margin-right": 10,
+
+  "modules-left": ["custom/sigil", "niri/workspaces", "niri/window"],
+  "modules-center": ["clock"],
+  "modules-right": [
+    "custom/vpn", "network", "cpu", "memory", "temperature",
+    "pulseaudio", "battery", "tray", "custom/power"
+  ],
+
+  "custom/sigil": {
+    "format": "☢ ASHFALL",
+    "tooltip": false,
+    "on-click": "fuzzel"
+  },
+
+  "niri/workspaces": {
+    "format": "{value}",
+    "all-outputs": false
+  },
+
+  "niri/window": {
+    "format": "// {title}",
+    "max-length": 60,
+    "rewrite": { "^// $": "" }
+  },
+
+  "clock": {
+    "format": "{:%H:%M  ·  %a %d %b}",
+    "format-alt": "{:%Y-%m-%dT%H:%M:%S%z}",
+    "interval": 1,
+    "tooltip-format": "<tt>{calendar}</tt>",
+    "calendar": {
+      "mode": "month",
+      "format": {
+        "months": "<span color='#a89f8c'><b>{}</b></span>",
+        "weekdays": "<span color='#6e6657'>{}</span>",
+        "today": "<span color='#9a8348'><b><u>{}</u></b></span>"
+      }
+    }
+  },
+
+  // tun0 / wg0 address — the IP you put in reverse shells. Click = copy.
+  "custom/vpn": {
+    "exec": "~/.config/waybar/scripts/vpn.sh",
+    "return-type": "json",
+    "interval": 5,
+    "on-click": "~/.local/bin/ctf-ip"
+  },
+
+  "network": {
+    "format-wifi": "NET {ipaddr}",
+    "format-ethernet": "ETH {ipaddr}",
+    "format-disconnected": "NET ---",
+    "tooltip-format": "{ifname} via {gwaddr}\n{essid} {signalStrength}%",
+    "on-click": "kitty -e nmtui"
+  },
+
+  "cpu": { "format": "CPU {usage:>2}%", "interval": 3, "states": { "hot": 85 } },
+  "memory": { "format": "MEM {percentage:>2}%", "interval": 5, "states": { "hot": 85 } },
+  "temperature": {
+    "format": "{temperatureC}°",
+    "critical-threshold": 85,
+    "format-critical": "{temperatureC}° !!"
+  },
+
+  "pulseaudio": {
+    "format": "VOL {volume}%",
+    "format-muted": "VOL --",
+    "on-click": "pavucontrol",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+  },
+
+  "battery": {
+    "format": "BAT {capacity}%",
+    "format-charging": "BAT {capacity}%+",
+    "states": { "warning": 25, "critical": 12 }
+  },
+
+  "tray": { "icon-size": 14, "spacing": 8 },
+
+  "custom/power": {
+    "format": "⏻",
+    "tooltip": false,
+    "on-click": "~/.local/bin/ashfall-power"
+  }
+}

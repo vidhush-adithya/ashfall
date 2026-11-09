@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+choice=$(printf '  lock\n  suspend\n  logout\n  reboot\n  shutdown\n  wipe clipboard\n' \
+  | fuzzel --dmenu --prompt "  power ❯ " --lines 6 --width 26) || exit 0
+case "$choice" in
+  *lock)      swaylock ;;
+  *suspend)   systemctl suspend ;;
+  *logout)    niri msg action quit --skip-confirmation ;;
+  *reboot)    systemctl reboot ;;
+  *shutdown)  systemctl poweroff ;;
+  *clipboard) cliphist wipe && wl-copy --clear && notify-send -a ASHFALL "clipboard wiped" ;;
+esac

@@ -1,0 +1,41 @@
+# ASHFALL — starship prompt
+add_newline = true
+format = """
+[┌─](#4a443a)$username$hostname$directory$git_branch$git_status$python${custom.vpn}$cmd_duration
+[└─](#4a443a)$character"""
+
+[username]
+show_always = true
+format = "[$user](bold #8b5a3c)"
+[hostname]
+ssh_only = false
+format = "[@$hostname](#6e6657) "
+[directory]
+format = "[$path]($style)[$read_only]($style) "
+style = "#a89f8c"
+truncation_length = 4
+truncation_symbol = "…/"
+[git_branch]
+format = "[git:$branch]($style) "
+style = "#5d6a48"
+[git_status]
+format = "[$all_status$ahead_behind]($style) "
+style = "#9a8348"
+[python]
+format = "[py:$virtualenv]($style) "
+style = "#556270"
+detect_extensions = []
+detect_files = []
+[custom.vpn]
+command = "ip -4 -o addr show tun0 2>/dev/null | awk '{print $4}' | cut -d/ -f1"
+when = "ip link show tun0 >/dev/null 2>&1"
+format = "[vpn:$output]($style) "
+style = "bold #5d6a48"
+shell = ["bash", "--noprofile", "--norc"]
+[cmd_duration]
+min_time = 3000
+format = "[took $duration](#6e6657)"
+[character]
+success_symbol = "[❯](bold #9a8348)"
+error_symbol = "[✗](bold #7a3329)"
+vimcmd_symbol = "[❮](bold #5d6a48)"

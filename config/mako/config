@@ -1,0 +1,32 @@
+# ASHFALL — mako
+font=JetBrainsMono Nerd Font 10
+background-color=#14120ff0
+text-color=#a89f8c
+border-color=#4a443a
+progress-color=over #8b5a3c
+border-size=2
+border-radius=2
+padding=12,14
+margin=12
+width=380
+height=160
+anchor=top-right
+default-timeout=6000
+max-visible=4
+icons=1
+max-icon-size=40
+format=<b>%s</b>\n%b
+
+[urgency=low]
+text-color=#6e6657
+
+[urgency=high]
+border-color=#7a3329
+default-timeout=0
+
+[app-name=ASHFALL]
+border-color=#8b5a3c
+
+[app-name="FLAG"]
+border-color=#9a8348
+text-color=#c2b8a3

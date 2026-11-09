@@ -1,0 +1,377 @@
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  A S H F A L L  —  niri config  //  ctf operator edition      ║
+// ║  palette: ash #0c0b09 · bone #a89f8c · rust #8b5a3c · ochre   ║
+// ║  Mod+Shift+/  shows every hotkey. Edit + save = live reload.  ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+input {
+    keyboard {
+        xkb {
+            layout "us"
+            // Caps Lock becomes an extra Escape (vim / gdb friendly)
+            options "caps:escape"
+        }
+        repeat-delay 250
+        repeat-rate 40
+        numlock
+    }
+    touchpad {
+        tap
+        dwt
+        natural-scroll
+        accel-profile "adaptive"
+    }
+    mouse {
+        accel-profile "flat"
+    }
+    focus-follows-mouse max-scroll-amount="0%"
+    warp-mouse-to-focus
+}
+
+// Set your monitor here after running `niri msg outputs`
+/-output "eDP-1" {
+    mode "1920x1080@60"
+    scale 1
+}
+
+layout {
+    gaps 10
+    center-focused-column "on-overflow"
+    background-color "#0c0b09"
+
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+        proportion 1.0
+    }
+    default-column-width { proportion 0.5; }
+
+    focus-ring { off; }
+
+    border {
+        width 2
+        active-gradient from="#8b5a3c" to="#4a3a2a" angle=135
+        inactive-color "#24211c"
+        urgent-color "#7a3329"
+    }
+
+    shadow {
+        on
+        softness 24
+        spread 4
+        offset x=0 y=6
+        color "#000000c0"
+    }
+
+    tab-indicator {
+        hide-when-single-tab
+        place-within-column
+        width 3
+        gap 4
+        corner-radius 0
+        active-color "#9a8348"
+        inactive-color "#3a352c"
+        urgent-color "#7a3329"
+    }
+
+    insert-hint {
+        color "#8b5a3c60"
+    }
+
+    struts {
+        left 4
+        right 4
+    }
+}
+
+overview {
+    zoom 0.45
+    backdrop-color "#070605"
+    workspace-shadow {
+        softness 40
+        spread 8
+        color "#000000aa"
+    }
+}
+
+cursor {
+    xcursor-theme "Adwaita"
+    xcursor-size 24
+    hide-when-typing
+    hide-after-inactive-ms 4000
+}
+
+environment {
+    // Java tools (Burp, Ghidra) behave on Wayland/Xwayland with this
+    _JAVA_AWT_WM_NONREPARENTING "1"
+    QT_QPA_PLATFORM "wayland;xcb"
+    QT_QPA_PLATFORMTHEME "gtk3"
+    MOZ_ENABLE_WAYLAND "1"
+    ELECTRON_OZONE_PLATFORM_HINT "auto"
+}
+
+prefer-no-csd
+
+hotkey-overlay {
+    skip-at-startup
+}
+
+screenshot-path "~/Pictures/Screenshots/ashfall_%Y-%m-%d_%H-%M-%S.png"
+
+// ── startup ─────────────────────────────────────────────────────────
+spawn-at-startup "waybar"
+spawn-at-startup "mako"
+spawn-sh-at-startup "swaybg -m fill -i ~/.local/share/ashfall/ashfall.png"
+spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
+spawn-sh-at-startup "wl-paste --type image --watch cliphist store"
+spawn-sh-at-startup "swayidle -w timeout 600 'swaylock -f' timeout 900 'niri msg action power-off-monitors' before-sleep 'swaylock -f'"
+
+// ── named workspaces: the CTF board ─────────────────────────────────
+workspace "recon"
+workspace "web"
+workspace "pwn"
+workspace "rev"
+workspace "intel"
+
+// ── animations: quick and heavy, no bounce ───────────────────────────
+animations {
+    slowdown 0.8
+    workspace-switch {
+        spring damping-ratio=1.0 stiffness=1000 epsilon=0.0001
+    }
+    window-open {
+        duration-ms 180
+        curve "ease-out-expo"
+    }
+    window-close {
+        duration-ms 140
+        curve "ease-out-quad"
+    }
+    horizontal-view-movement {
+        spring damping-ratio=1.0 stiffness=900 epsilon=0.0001
+    }
+}
+
+// ── window rules ────────────────────────────────────────────────────
+// Slight bevel on everything; nothing glossy.
+window-rule {
+    geometry-corner-radius 3
+    clip-to-geometry true
+}
+
+// Unfocused windows dim into the ash.
+window-rule {
+    match is-active=false
+    opacity 0.93
+}
+
+// Web workspace: browsers + Burp
+window-rule {
+    match app-id=r#"^(firefox|librewolf|chromium|brave-browser)$"#
+    open-on-workspace "web"
+    default-column-width { proportion 0.66667; }
+}
+window-rule {
+    match title=r#"^Burp Suite"#
+    match app-id=r#"^burp"#
+    open-on-workspace "web"
+    open-maximized true
+}
+
+// Rev workspace: Ghidra / ImHex / Cutter
+window-rule {
+    match app-id=r#"^ghidra"#
+    match title=r#"^Ghidra"#
+    match app-id=r#"^(imhex|cutter|org\.radare\.iaito)$"#
+    open-on-workspace "rev"
+}
+window-rule {
+    // Ghidra / Burp splash screens & small dialogs float
+    match title=r#"^(Ghidra|Burp Suite)\s*$"#
+    match title=r#"^(Tip of the Day|Import|Analyze|Options)"#
+    open-floating true
+}
+
+// Recon workspace: Wireshark
+window-rule {
+    match app-id=r#"^org\.wireshark\.Wireshark$"#
+    open-on-workspace "recon"
+    open-maximized true
+}
+
+// Intel workspace: notes, chat, writeups
+window-rule {
+    match app-id=r#"^(obsidian|discord|vesktop|org\.telegram\.desktop)$"#
+    open-on-workspace "intel"
+}
+
+// Drop-down scratch terminal (Mod+`)
+window-rule {
+    match app-id=r#"^ashfall-scratch$"#
+    open-floating true
+    default-column-width { proportion 0.6; }
+    default-window-height { proportion 0.55; }
+    default-floating-position x=0 y=40 relative-to="top"
+}
+
+// Small utilities float
+window-rule {
+    match app-id=r#"^(pavucontrol|org\.pulseaudio\.pavucontrol|nm-connection-editor|blueman-manager)$"#
+    match title=r#"^(Open File|Save File|Open Folder|File Upload|Choose Files)"#
+    match app-id=r#"^xdg-desktop-portal"#
+    open-floating true
+}
+
+// Picture-in-picture
+window-rule {
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+// Hide password managers from screenshots/screencasts (CTF streams!)
+window-rule {
+    match app-id=r#"^org\.keepassxc\.KeePassXC$"#
+    block-out-from "screencast"
+}
+
+// Notifications should not be screenshotted into writeups
+layer-rule {
+    match namespace="^notifications$"
+    block-out-from "screencast"
+}
+
+binds {
+    Mod+Shift+Slash { show-hotkey-overlay; }
+
+    // ── launch ──────────────────────────────────────────────────────
+    Mod+Return     hotkey-overlay-title="Terminal" { spawn "kitty"; }
+    Mod+T          { spawn "kitty"; }
+    Mod+Grave      hotkey-overlay-title="Scratch terminal" { spawn "kitty" "--class" "ashfall-scratch"; }
+    Mod+Space      hotkey-overlay-title="Launcher" { spawn "fuzzel"; }
+    Mod+D          { spawn "fuzzel"; }
+    Mod+E          hotkey-overlay-title="Files (yazi)" { spawn "kitty" "-e" "yazi"; }
+    Mod+B          hotkey-overlay-title="Browser" { spawn "firefox"; }
+    Mod+Shift+B    hotkey-overlay-title="Burp Suite" { spawn-sh "burpsuite || notify-send 'ASHFALL' 'burpsuite not installed'"; }
+    Mod+G          hotkey-overlay-title="Ghidra" { spawn-sh "ghidra || notify-send 'ASHFALL' 'ghidra not installed'"; }
+    Mod+Shift+W    hotkey-overlay-title="Wireshark" { spawn "wireshark"; }
+    Mod+Shift+T    hotkey-overlay-title="btop" { spawn "kitty" "-e" "btop"; }
+
+    // ── ctf ─────────────────────────────────────────────────────────
+    Mod+Shift+N    hotkey-overlay-title="CTF: new challenge" { spawn "~/.local/bin/ctf-new"; }
+    Mod+N          hotkey-overlay-title="CTF: open current notes" { spawn "~/.local/bin/ctf-notes"; }
+    Mod+Shift+Return hotkey-overlay-title="CTF: terminal in current challenge" { spawn-sh "kitty -d ~/ctf/current"; }
+    Mod+Y          hotkey-overlay-title="Clipboard history" { spawn "~/.local/bin/ashfall-clip"; }
+    Mod+Shift+Y    hotkey-overlay-title="CTF: grab flag from clipboard" { spawn "~/.local/bin/flag-grab"; }
+    Mod+P          hotkey-overlay-title="Copy VPN (tun0) IP" { spawn "~/.local/bin/ctf-ip"; }
+    Mod+Shift+R    hotkey-overlay-title="Reverse-shell cheatsheet" { spawn-sh "kitty --class ashfall-scratch --hold -e ~/.local/bin/revsh"; }
+
+    // ── session ─────────────────────────────────────────────────────
+    Mod+X          hotkey-overlay-title="Power menu" { spawn "~/.local/bin/ashfall-power"; }
+    Super+Alt+L    hotkey-overlay-title="Lock" { spawn "swaylock"; }
+    Mod+Shift+E    { quit; }
+    Ctrl+Alt+Delete { quit; }
+    Mod+Shift+P    { power-off-monitors; }
+    Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
+
+    // ── media / hardware ────────────────────────────────────────────
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.05+ -l 1.0"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.05-"; }
+    XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
+    XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
+    XF86AudioPlay        allow-when-locked=true { spawn "playerctl" "play-pause"; }
+    XF86AudioNext        allow-when-locked=true { spawn "playerctl" "next"; }
+    XF86AudioPrev        allow-when-locked=true { spawn "playerctl" "previous"; }
+    XF86MonBrightnessUp   allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "+5%"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "5%-"; }
+
+    // ── screenshots (for writeups) ──────────────────────────────────
+    Print        { screenshot; }
+    Mod+Shift+S  hotkey-overlay-title="Screenshot region" { screenshot; }
+    Ctrl+Print   { screenshot-screen; }
+    Alt+Print    { screenshot-window; }
+
+    // ── windows ─────────────────────────────────────────────────────
+    Mod+Q repeat=false { close-window; }
+    Mod+O repeat=false hotkey-overlay-title="Overview" { toggle-overview; }
+    Mod+Tab { focus-workspace-previous; }
+
+    Mod+H     { focus-column-left; }
+    Mod+J     { focus-window-or-workspace-down; }
+    Mod+K     { focus-window-or-workspace-up; }
+    Mod+L     { focus-column-right; }
+    Mod+Left  { focus-column-left; }
+    Mod+Down  { focus-window-or-workspace-down; }
+    Mod+Up    { focus-window-or-workspace-up; }
+    Mod+Right { focus-column-right; }
+
+    Mod+Ctrl+H     { move-column-left; }
+    Mod+Ctrl+J     { move-window-down-or-to-workspace-down; }
+    Mod+Ctrl+K     { move-window-up-or-to-workspace-up; }
+    Mod+Ctrl+L     { move-column-right; }
+    Mod+Ctrl+Left  { move-column-left; }
+    Mod+Ctrl+Down  { move-window-down-or-to-workspace-down; }
+    Mod+Ctrl+Up    { move-window-up-or-to-workspace-up; }
+    Mod+Ctrl+Right { move-column-right; }
+
+    Mod+Home      { focus-column-first; }
+    Mod+End       { focus-column-last; }
+    Mod+Ctrl+Home { move-column-to-first; }
+    Mod+Ctrl+End  { move-column-to-last; }
+
+    Mod+Shift+H { focus-monitor-left; }
+    Mod+Shift+L { focus-monitor-right; }
+    Mod+Shift+Ctrl+H { move-column-to-monitor-left; }
+    Mod+Shift+Ctrl+L { move-column-to-monitor-right; }
+
+    Mod+U      { focus-workspace-down; }
+    Mod+I      { focus-workspace-up; }
+    Mod+Ctrl+U { move-column-to-workspace-down; }
+    Mod+Ctrl+I { move-column-to-workspace-up; }
+
+    // 1-5 = the CTF board, 6-9 = overflow
+    Mod+1 { focus-workspace "recon"; }
+    Mod+2 { focus-workspace "web"; }
+    Mod+3 { focus-workspace "pwn"; }
+    Mod+4 { focus-workspace "rev"; }
+    Mod+5 { focus-workspace "intel"; }
+    Mod+6 { focus-workspace 6; }
+    Mod+7 { focus-workspace 7; }
+    Mod+8 { focus-workspace 8; }
+    Mod+9 { focus-workspace 9; }
+    Mod+Ctrl+1 { move-column-to-workspace "recon"; }
+    Mod+Ctrl+2 { move-column-to-workspace "web"; }
+    Mod+Ctrl+3 { move-column-to-workspace "pwn"; }
+    Mod+Ctrl+4 { move-column-to-workspace "rev"; }
+    Mod+Ctrl+5 { move-column-to-workspace "intel"; }
+    Mod+Ctrl+6 { move-column-to-workspace 6; }
+    Mod+Ctrl+7 { move-column-to-workspace 7; }
+    Mod+Ctrl+8 { move-column-to-workspace 8; }
+    Mod+Ctrl+9 { move-column-to-workspace 9; }
+
+    Mod+WheelScrollDown cooldown-ms=150 { focus-workspace-down; }
+    Mod+WheelScrollUp   cooldown-ms=150 { focus-workspace-up; }
+    Mod+Shift+WheelScrollDown { focus-column-right; }
+    Mod+Shift+WheelScrollUp   { focus-column-left; }
+
+    // columns & sizing
+    Mod+BracketLeft  { consume-or-expel-window-left; }
+    Mod+BracketRight { consume-or-expel-window-right; }
+    Mod+Comma  { consume-window-into-column; }
+    Mod+Period { expel-window-from-column; }
+    Mod+R { switch-preset-column-width; }
+    Mod+Ctrl+R { reset-window-height; }
+    Mod+F { maximize-column; }
+    Mod+Shift+F { fullscreen-window; }
+    Mod+M { maximize-window-to-edges; }
+    Mod+Ctrl+F { expand-column-to-available-width; }
+    Mod+C { center-column; }
+    Mod+Minus { set-column-width "-10%"; }
+    Mod+Equal { set-column-width "+10%"; }
+    Mod+Shift+Minus { set-window-height "-10%"; }
+    Mod+Shift+Equal { set-window-height "+10%"; }
+    Mod+V       { toggle-window-floating; }
+    Mod+Shift+V { switch-focus-between-floating-and-tiling; }
+    Mod+W { toggle-column-tabbed-display; }
+}

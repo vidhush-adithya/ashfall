@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Clipboard history picker. Alt+Delete wipes history.
+sel=$(cliphist list | fuzzel --dmenu --prompt "  clip ❯ " --lines 12 --width 70) || exit 0
+[ -n "$sel" ] && printf '%s' "$sel" | cliphist decode | wl-copy

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Copy the VPN IP (tun0/wg0) to the clipboard, falling back to LAN IP.
+for i in tun0 tun1 wg0; do
+  ip=$(ip -4 -o addr show "$i" 2>/dev/null | awk '{print $4}' | cut -d/ -f1)
+  [ -n "$ip" ] && break
+done
+[ -z "$ip" ] && { i=lan; ip=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(n=1;n<NF;n++) if($n=="src") print $(n+1)}'); }
+[ -z "$ip" ] && { notify-send -a ASHFALL "no signal" "no interface up"; exit 1; }
+printf '%s' "$ip" | wl-copy
+notify-send -a ASHFALL "$i ip copied" "$ip"
+[ -t 1 ] && echo "$ip"
+exit 0

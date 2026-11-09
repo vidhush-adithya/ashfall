@@ -1,0 +1,84 @@
+/* ASHFALL — waybar */
+@define-color ash    #0c0b09;
+@define-color soot   #14120f;
+@define-color char   #1d1a16;
+@define-color slag   #2a2620;
+@define-color grit   #4a443a;
+@define-color dust   #6e6657;
+@define-color bone   #a89f8c;
+@define-color rust   #8b5a3c;
+@define-color ochre  #9a8348;
+@define-color moss   #5d6a48;
+@define-color blood  #7a3329;
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+}
+
+window#waybar {
+  background: alpha(@soot, 0.90);
+  color: @bone;
+  border: 1px solid @slag;
+  border-bottom: 2px solid @rust;
+}
+
+tooltip {
+  background: @soot;
+  border: 1px solid @grit;
+  color: @bone;
+}
+
+#custom-sigil {
+  color: @ash;
+  background: @rust;
+  padding: 0 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+#workspaces { margin-left: 4px; }
+#workspaces button {
+  color: @dust;
+  background: transparent;
+  padding: 0 10px;
+  text-transform: uppercase;
+  border-bottom: 2px solid transparent;
+}
+#workspaces button.empty { color: @grit; }
+#workspaces button.active {
+  color: @bone;
+  background: @char;
+  border-bottom: 2px solid @ochre;
+}
+#workspaces button.urgent { color: @ash; background: @blood; }
+#workspaces button:hover { background: @slag; color: @bone; box-shadow: none; }
+
+#window { color: @dust; padding-left: 10px; font-weight: 400; }
+
+#clock { color: @bone; padding: 0 14px; letter-spacing: 1px; }
+
+#custom-vpn, #network, #cpu, #memory, #temperature,
+#pulseaudio, #battery, #tray, #custom-power {
+  padding: 0 10px;
+  color: @dust;
+  border-left: 1px solid @slag;
+}
+
+#custom-vpn.up    { color: @ash; background: @moss; font-weight: 800; }
+#custom-vpn.down  { color: @grit; }
+#network.disconnected { color: @grit; }
+
+#cpu.hot, #memory.hot, #temperature.critical,
+#battery.critical:not(.charging) { color: @ash; background: @blood; }
+#battery.warning:not(.charging) { color: @ochre; }
+#battery.charging { color: @moss; }
+#pulseaudio.muted { color: @grit; }
+
+#custom-power { color: @rust; padding: 0 12px; }
+#custom-power:hover { background: @blood; color: @bone; }

@@ -1,0 +1,31 @@
+# ASHFALL — swaylock
+image=~/.local/share/ashfall/ashfall-lock.png
+scaling=fill
+indicator-radius=90
+indicator-thickness=6
+font=JetBrainsMono Nerd Font
+show-failed-attempts
+ignore-empty-password
+
+color=0c0b09
+inside-color=0c0b09cc
+inside-clear-color=0c0b09cc
+inside-ver-color=14120fcc
+inside-wrong-color=7a3329cc
+ring-color=2a2620
+ring-clear-color=5d6a48
+ring-ver-color=9a8348
+ring-wrong-color=7a3329
+key-hl-color=8b5a3c
+bs-hl-color=7a3329
+line-color=00000000
+line-clear-color=00000000
+line-ver-color=00000000
+line-wrong-color=00000000
+separator-color=00000000
+text-color=a89f8c
+text-clear-color=a89f8c
+text-ver-color=9a8348
+text-wrong-color=c2b8a3
+layout-bg-color=00000000
+layout-text-color=6e6657

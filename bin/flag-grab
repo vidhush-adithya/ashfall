@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Scan clipboard history for flag-shaped strings (xxx{...}), pick one,
+# copy it clean and log it to ~/ctf/current/flags.txt.
+# Custom formats: export FLAG_RE='HTB\{[^}]+\}' in your shell profile.
+RE="${FLAG_RE:-[A-Za-z0-9_]{2,20}\{[^}[:space:]]{3,200}\}}"
+flags=$(cliphist list | cut -f2- | grep -oE "$RE" | awk '!s[$0]++' | head -50)
+[ -z "$flags" ] && { notify-send -a FLAG "no flags in clipboard history"; exit 1; }
+pick=$(printf '%s\n' "$flags" | fuzzel --dmenu --prompt "  flag ❯ " --lines 8) || exit 0
+[ -z "$pick" ] && exit 0
+printf '%s' "$pick" | wl-copy
+log="$HOME/ctf/current/flags.txt"; [ -d "$HOME/ctf/current" ] || log="$HOME/ctf/flags.txt"
+mkdir -p "$(dirname "$log")"
+grep -qxF "$pick" "$log" 2>/dev/null || echo "$pick" >> "$log"
+notify-send -a FLAG "flag secured" "$pick"
