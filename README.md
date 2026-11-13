@@ -48,6 +48,8 @@ The script backs up your existing configs to `~/.config/ashfall-backup-<date>/` 
 ## Shell helpers (zsh)
 `c` (cd to current challenge) · `nmapq <ip>` · `nmapf <ip>` · `fuzzdir <url>` · `vhosts <domain>` · `serve [port]` · `listen [port]` · `triage <file>` · `flagfind [dir]` · `ex <archive>` · `b64d/b64e/hexd/hexe/rot13/urld/urle/jwtd <str>`
 
+**Shell features:** `↑`/`↓` search history by what you've typed · `Esc Esc` adds sudo · `Ctrl+X Ctrl+E` edits the command in nvim · `Alt+C` copies the command line · coloured, grouped Tab completion · `cd` remembers recent folders (`d`, `cd -2`) · commands over 30 s send a desktop notification when done · `ctflog` records the terminal session for writeups · unknown commands tell you which package to install · `ashfall-help` lists everything.
+
 Custom flag format: `export FLAG_RE='flag\{[^}]+\}'` in `~/.zshrc`.
 
 ## Tweak

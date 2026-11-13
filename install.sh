@@ -34,7 +34,8 @@ DESKTOP=(
   wl-clipboard cliphist libnotify brightnessctl playerctl pavucontrol
   networkmanager network-manager-applet pipewire wireplumber pipewire-pulse
   ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji papirus-icon-theme adw-gtk-theme
-  zsh zsh-autosuggestions zsh-syntax-highlighting starship fzf zoxide eza bat
+  zsh zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search zsh-completions pkgfile
+  starship fzf zoxide eza bat
   ripgrep fd jq neovim yazi btop fastfetch firefox unzip p7zip
 )
 CTF=(
@@ -103,6 +104,7 @@ if ((WITH_PKGS)); then
     fi
   fi
   sudo systemctl enable --now NetworkManager >/dev/null 2>&1 || true
+  command -v pkgfile >/dev/null && { say "building command-not-found index"; sudo pkgfile -u >/dev/null 2>&1; sudo systemctl enable --now pkgfile-update.timer >/dev/null 2>&1; }
 fi
 
 # ── configs (backup first) ──────────────────────────────────────────
