@@ -18,7 +18,7 @@ DIRSTACKSIZE=20
 
 bindkey -e
 # keys kitty sends: Home/End/Delete, Ctrl+←/→ word jumps, Ctrl+Backspace
-bindkey '^[[H' beginning-of-line '^[[F' end-of-line '^[[3~' delete-char
+bindkey '^[[H' beginning-of-line '^[[F' end-of-line
 bindkey '^[[1;5D' backward-word '^[[1;5C' forward-word '^H' backward-kill-word
 # Ctrl+X Ctrl+E: edit the current command in nvim (great for long one-liners)
 autoload -Uz edit-command-line; zle -N edit-command-line; bindkey '^X^E' edit-command-line
@@ -26,8 +26,23 @@ autoload -Uz edit-command-line; zle -N edit-command-line; bindkey '^X^E' edit-co
 _ashfall_sudo() { [[ -z $BUFFER ]] && BUFFER="$(fc -ln -1)"; [[ $BUFFER == sudo\ * ]] && BUFFER="${BUFFER#sudo }" || BUFFER="sudo $BUFFER"; CURSOR=${#BUFFER}; }
 zle -N _ashfall_sudo; bindkey '\e\e' _ashfall_sudo
 # Alt+C at the prompt: copy the current command line to the clipboard
-_ashfall_copyline() { printf '%s' "$BUFFER" | wl-copy && zle -M "copied"; }
+_ashfall_copyline() { printf '%s' "$BUFFER" | wl-copy && zle -M "copied"; REGION_ACTIVE=0; }
 zle -N _ashfall_copyline; bindkey '\ec' _ashfall_copyline
+# Ctrl+A: select the whole command line, like a text box. Then:
+#   type → replaces it · Backspace/Delete → clears it · Alt+C → copies it
+#   Ctrl+A again → unselect and jump to the start of the line (the old Ctrl+A)
+zle_highlight=(region:bg=#3a352c,fg=#c2b8a3)
+_ashfall_select_all() {
+  if (( REGION_ACTIVE )); then REGION_ACTIVE=0; CURSOR=0
+  else MARK=0; CURSOR=${#BUFFER}; REGION_ACTIVE=1; fi
+}
+_ashfall_backspace()   { if (( REGION_ACTIVE )); then zle kill-region; REGION_ACTIVE=0; else zle backward-delete-char; fi; }
+_ashfall_delete()      { if (( REGION_ACTIVE )); then zle kill-region; REGION_ACTIVE=0; else zle delete-char; fi; }
+_ashfall_self_insert() { if (( REGION_ACTIVE )); then zle kill-region; REGION_ACTIVE=0; fi; zle .self-insert; }
+_ashfall_paste()       { if (( REGION_ACTIVE )); then zle kill-region; REGION_ACTIVE=0; fi; zle .bracketed-paste; }
+zle -N _ashfall_select_all; zle -N _ashfall_backspace; zle -N _ashfall_delete
+zle -N self-insert _ashfall_self_insert; zle -N bracketed-paste _ashfall_paste
+bindkey '^A' _ashfall_select_all '^?' _ashfall_backspace '^[[3~' _ashfall_delete
 
 # ── completion: menu, colours, descriptions, typo-tolerant ──
 fpath=(/usr/share/zsh/site-functions $fpath)
@@ -165,7 +180,8 @@ ctflog() {
 ashfall-help() {
   print -P "%F{#8b5a3c}── keys ──%f"
   print "  Tab menu · ↑/↓ history search · Ctrl+R fuzzy history · Ctrl+T find file"
-  print "  Esc Esc add sudo · Ctrl+X Ctrl+E edit in nvim · Alt+C copy line · → accept suggestion"
+  print "  Ctrl+A select all (again: line start) · Alt+C copy line · Esc Esc add sudo · Ctrl+X Ctrl+E edit in nvim"
+  print "  → accept suggestion · Ctrl+Alt+A copy ALL terminal output (kitty)"
   print -P "%F{#8b5a3c}── navigation ──%f"
   print "  c  ..  ...  d  cd -N  z <name>  mkcd <dir>"
   print -P "%F{#8b5a3c}── ctf ──%f"
