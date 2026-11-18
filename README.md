@@ -21,7 +21,7 @@ Nothing new runs in the background: panels start when you press their key and ex
 | Key / command | What it does |
 |---|---|
 | `Super+A` | **CTF panel** — then one plain key: `N` new · `F` flag · `R` revshells · `O` notes · `T` terminal · `C` copy IP · `V` VPN on/off · `L` listener · `Esc` |
-| `Super+Alt+S` | **Hub** — theme (keys 1–6), window style, gaps, corners, low-power mode, mascot |
+| `Super+Alt+S` | **Hub** — theme (keys 1–6), window style (outline · bunker · heavy plate · **monolith** = every window 90% see-through + frosted, the 43PR look), gaps, corners, terminal opacity, low-power mode, mascot |
 | `Super+Alt+W` | **Wallpaper picker** — ← → browse, Enter = wallpaper + matching theme, Shift+Enter = wallpaper only |
 | `ashfall-theme <name>` | ashfall · winter · phosphor · redzone · dust · bog |
 | `ashfall-wall set/next/random` | wallpapers (12 originals; add your own in `~/Pictures/Wallpapers`) |

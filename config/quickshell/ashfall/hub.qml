@@ -129,7 +129,7 @@ ShellRoot {
                     RowLayout {
                         spacing: 8
                         Repeater {
-                            model: [["outline", "OUTLINE"], ["bunker", "BUNKER"], ["plate", "HEAVY PLATE"]]
+                            model: [["outline", "OUTLINE"], ["bunker", "BUNKER"], ["plate", "HEAVY PLATE"], ["monolith", "MONOLITH"]]
                             Pill { required property var modelData; text: modelData[1]; on: root.cfg.style === modelData[0]
                                    onPicked: root.apply(["style", modelData[0]]) }
                         }
