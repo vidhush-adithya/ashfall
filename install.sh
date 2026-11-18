@@ -100,7 +100,13 @@ if ((WITH_PKGS)); then
     H=$(aur_helper)
     if [ -n "${H:-}" ]; then
       failed=()
-      for p in "${AUR_QUEUE[@]}"; do "$H" -S --needed --noconfirm "$p" >/dev/null 2>&1 || failed+=("$p"); done
+      n=0; total=${#AUR_QUEUE[@]}
+      for p in "${AUR_QUEUE[@]}"; do
+        n=$((n + 1)); say "AUR $n/$total: $p"
+        extra=(); [ "$H" = paru ] && extra=(--skipreview)
+        "$H" -S --needed --noconfirm "${extra[@]}" "$p" 2>&1 | grep -E "error|==> (Making|Finished)|downloading" || true
+        pacman -Qq "$p" >/dev/null 2>&1 || failed+=("$p")
+      done
       ((${#failed[@]})) && warn "AUR packages that didn't install (optional): ${failed[*]}"
     else
       warn "skipped AUR packages: ${AUR_QUEUE[*]}"
