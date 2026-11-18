@@ -138,6 +138,21 @@ ShellRoot {
                     Stepper { label: "CORNER RADIUS"; key: "radius"; value: root.cfg.radius || 0; lo: 0; hi: 16; step: 1 }
                 }
                 Box {
+                    Label { text: "TERMINAL" }
+                    RowLayout {
+                        Layout.fillWidth: true; spacing: 8
+                        Text { text: "OPACITY"; color: root.c("fg", "#a89f8c"); font { family: root.mono; pixelSize: 11; letterSpacing: 1 } Layout.preferredWidth: 160 }
+                        Repeater {
+                            model: [0.7, 0.8, 0.9, 1.0]
+                            Pill { required property var modelData
+                                   text: modelData === 1.0 ? "SOLID" : Math.round(modelData * 100) + "%"
+                                   on: Math.abs((root.cfg.opacity || 1) - modelData) < 0.05
+                                   onPicked: root.apply(["opacity", String(modelData)]) }
+                        }
+                    }
+                    Toggle { label: "FROSTED BLUR BEHIND TERMINAL"; key: "blur"; value: !!root.cfg.blur }
+                }
+                Box {
                     Label { text: "PERFORMANCE & EXTRAS" }
                     Toggle { label: "LOW POWER MODE  (no animations, shadows, fading)"; key: "lowpower"; value: !!root.cfg.lowpower }
                     Toggle { label: "ANIMATIONS"; key: "animations"; value: root.cfg.animations !== false }

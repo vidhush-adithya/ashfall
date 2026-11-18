@@ -161,6 +161,17 @@ window-rule {
     clip-to-geometry true
 }
 
+// ashfall-blur: frosted glass behind kitty (ashfall-set blur on|off)
+window-rule {
+    match app-id=r#"^kitty$"#
+    match app-id=r#"^ashfall-scratch$"#
+    background-effect {
+        blur true
+        saturation 0.8
+        noise 0.02
+    }
+}
+
 // Unfocused windows dim into the ash.
 window-rule {
     match is-active=false

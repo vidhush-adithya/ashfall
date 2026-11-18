@@ -59,6 +59,14 @@ def migrate(t):
         new = re.sub(r'(spawn-sh-at-startup\s+"swayidle -w )', r"\1timeout 540 '~/.local/bin/ashfall-notify sleepy zzz…' ", t, count=1)
         if new != t:
             t = new; notes.append("added the 'locking in a minute' warning")
+    # frosted blur behind the terminal (cheap "xray" blur of the wallpaper; niri 26.04+)
+    if "ashfall-blur" not in t:
+        rule = ('\n// ashfall-blur: frosted glass behind kitty (ashfall-set blur on|off)\n'
+                'window-rule {\n    match app-id=r#"^kitty$"#\n    match app-id=r#"^ashfall-scratch$"#\n'
+                '    background-effect {\n        blur true\n        saturation 0.8\n        noise 0.02\n    }\n}\n')
+        m = re.search(r"\n// Unfocused windows dim into the ash\.", t)
+        t = (t[:m.start()] + rule + t[m.start():]) if m else (t.rstrip("\n") + "\n" + rule)
+        notes.append("added frosted blur behind the terminal")
     return t, notes
 
 

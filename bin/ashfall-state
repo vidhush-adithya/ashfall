@@ -77,6 +77,13 @@ def niri_settings():
     m = re.search(r"//\s*ashfall-style:\s*(\w+)", t)
     if m: s["style"] = m.group(1)
     s["lowpower"] = bool(re.search(r"//\s*ashfall-lowpower:\s*on", t))
+    m = re.search(r"// ashfall-blur:[^\n]*\n(?:[^\n]*\n){3,6}?\s*blur (true|false)", t)
+    s["blur"] = (m.group(1) == "true") if m else False
+    try:
+        m = re.search(r"^background_opacity\s+([0-9.]+)", open(os.path.join(CFG, "kitty/kitty.conf")).read(), re.M)
+        s["opacity"] = float(m.group(1)) if m else 1.0
+    except Exception:
+        s["opacity"] = 1.0
     return s
 
 

@@ -8,6 +8,8 @@
   ashfall-set animations <on|off>
   ashfall-set lowpower <on|off>                no animations, no shadows, no fading
   ashfall-set mascot <on|off>                  Ash-chan greeting + notification faces
+  ashfall-set opacity <0.5-1.0>                terminal translucency (1.0 = solid)
+  ashfall-set blur <on|off>                    frosted blur behind the terminal
 Every niri change is checked with `niri validate` first; a bad edit is never saved.
 """
 import os, re, shutil, subprocess, sys, tempfile
@@ -113,6 +115,19 @@ def main():
         p = os.path.join(AF, "no-mascot")
         if onoff and os.path.exists(p): os.unlink(p)
         if not onoff: os.makedirs(AF, exist_ok=True); open(p, "w").close()
+    elif k == "opacity":
+        o = max(0.5, min(1.0, float(v)))
+        kc = os.path.join(CFG, "kitty/kitty.conf")
+        t = open(kc).read()
+        t = re.sub(r"^background_opacity\s+[0-9.]+", f"background_opacity {o:.2f}", t, flags=re.M)
+        open(kc, "w").write(t)
+        # running terminals change instantly (kitty listens on @kitty-<pid>, see kitty.conf)
+        for pid in subprocess.run(["pgrep", "-x", "kitty"], capture_output=True, text=True).stdout.split():
+            subprocess.run(["kitten", "@", "--to", f"unix:@kitty-{pid}", "set-background-opacity", "--all", f"{o:.2f}"],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif k == "blur":
+        edit_niri(lambda t: re.sub(r"(// ashfall-blur:[^\n]*\n(?:[^\n]*\n){3,6}?\s*blur )(true|false)",
+                                   lambda m: m.group(1) + ("true" if onoff else "false"), t))
     else:
         sys.exit(__doc__)
 

@@ -25,7 +25,7 @@ Nothing new runs in the background: panels start when you press their key and ex
 | `Super+Alt+W` | **Wallpaper picker** — ← → browse, Enter = wallpaper + matching theme, Shift+Enter = wallpaper only |
 | `ashfall-theme <name>` | ashfall · winter · phosphor · redzone · dust · bog |
 | `ashfall-wall set/next/random` | wallpapers (12 originals; add your own in `~/Pictures/Wallpapers`) |
-| `ashfall-set …` | every hub setting from a terminal (`ashfall-set` lists them) |
+| `ashfall-set …` | every hub setting from a terminal (`ashfall-set` lists them), e.g. `ashfall-set opacity 0.7`, `ashfall-set blur on` |
 | `ctf-vpn` | toggle OpenVPN with the newest `.ovpn` in `~/ctf/vpn/` or `~/Downloads` |
 | `toys` | picker: horde, zombiesay, ashsay, cmatrix, cbonsai, pipes, nms, cava, Cataclysm DDA, NetHack… |
 
