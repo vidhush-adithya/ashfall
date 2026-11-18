@@ -22,7 +22,11 @@
   },
 
   "niri/workspaces": {
-    "format": "{value}",
+    "format": "{icon}",
+    "format-icons": {
+      "recon": "RECON", "web": "WEB", "pwn": "PWN", "rev": "REV", "intel": "INTEL",
+      "default": "·"
+    },
     "all-outputs": false
   },
 

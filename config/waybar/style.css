@@ -37,7 +37,6 @@ tooltip {
   color: @dust;
   background: transparent;
   padding: 0 10px;
-  text-transform: uppercase;
   border-bottom: 2px solid transparent;
 }
 #workspaces button.empty { color: @grit; }
