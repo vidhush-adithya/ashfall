@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# zombiesay "text" — a zombie says it. no text → a random wasteland one-liner.
+text="${*:-$(shuf -n1 "$HOME/.local/share/ashfall/fortunes.txt" 2>/dev/null || echo 'braaains')}"
+mapfile -t lines < <(printf '%s\n' "$text" | fold -s -w 44 | sed 's/ *$//')
+w=0; for l in "${lines[@]}"; do (( ${#l} > w )) && w=${#l}; done
+bar=$(printf '%*s' $((w + 2)) '' | tr ' ' '-')
+printf ' %s\n' "${bar//-/_}"
+if (( ${#lines[@]} == 1 )); then printf '< %-*s >\n' "$w" "${lines[0]}"
+else for i in "${!lines[@]}"; do
+  l='|'; r='|'; (( i == 0 )) && { l='/'; r='\'; }; (( i == ${#lines[@]} - 1 )) && { l='\'; r='/'; }
+  printf '%s %-*s %s\n' "$l" "$w" "${lines[$i]}" "$r"; done
+fi
+g=$'\e[32m'; y=$'\e[33m'; d=$'\e[90m'; n=$'\e[0m'
+printf ' %s\n' "$bar"
+cat <<ART
+        \\
+         \\   ${g}.-"""-.${n}
+          \\ ${g}/  ${y}x  x${g} \\${n}
+           ${g}|   __   |${n}
+            ${g}\\ \\__/ /${n}
+          ${d}__/'----'\\__${n}
+         ${d}/  |  ||  |  \\${n}
+            ${d}|  ||  |${n}
+           ${d}_|__||__|_${n}
+ART

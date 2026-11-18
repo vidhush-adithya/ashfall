@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# ashfall-panel <ctf|hub|walls>
+# Opens an ASHFALL panel. Press the same key again to close it.
+# Panels run only while open (Quickshell); without Quickshell they fall back to fuzzel menus.
+export PATH="$HOME/.local/bin:$PATH"
+p="${1:-ctf}"
+qml="${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/ashfall/$p.qml"
+qs=$(command -v quickshell || command -v qs)
+
+# toggle: if this panel is already open, close it
+if pkill -f "quickshell.*ashfall/$p.qml" 2>/dev/null || pkill -f "qs .*ashfall/$p.qml" 2>/dev/null; then exit 0; fi
+
+if [ -n "$qs" ] && [ -f "$qml" ]; then
+  exec "$qs" -p "$qml" >/dev/null 2>&1
+fi
+
+# ── fallbacks (no Quickshell) ──────────────────────────────
+menu() { fuzzel --dmenu --prompt "  $1 ❯ " --lines "${2:-10}" --width "${3:-40}"; }
+case "$p" in
+  ctf)
+    c=$(printf 'N  new challenge\nF  grab flag\nR  reverse shells\nO  notes\nT  terminal in challenge\nC  copy VPN IP\nV  VPN on/off\nL  listener :4444\n' | menu ctf 8 34) || exit 0
+    case "${c:0:1}" in
+      N) ctf-new;; F) flag-grab;; R) kitty --class ashfall-scratch --hold -e revsh;; O) ctf-notes;;
+      T) kitty -d "$HOME/ctf/current";; C) ctf-ip;; V) ctf-vpn;; L) kitty -e rlwrap nc -lvnp 4444;;
+    esac;;
+  hub)
+    t=$(ashfall-theme --list | menu theme 6 24) && ashfall-theme "$t";;
+  walls)
+    w=$(ashfall-wall list | python3 -c 'import json,sys;[print(w["name"]) for w in json.load(sys.stdin)]' | menu wallpaper 12 32) && ashfall-wall set "$w";;
+esac

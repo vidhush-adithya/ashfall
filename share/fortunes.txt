@@ -1,0 +1,25 @@
+nmap finished. brains not found on port 80.
+the bunker door is locked. try admin:admin.
+radiation level: elevated. caffeine level: critical.
+no canary found. the mine is safe. probably.
+it's not paranoia if the SOC really is watching.
+rule 1 of the wasteland: always read the source.
+the flag is in the last place you'll look. so look there first.
+sector 7 reports: segfault at 0x41414141.
+hydrate. sleep. then pop the shell.
+stack's smashed. the shell is near.
+everything is a file. even the zombies.
+the outpost has wifi. the password is on a sticky note.
+keep calm and check the LFI.
+somewhere, a cron job runs as root.
+supplies low. scope high. proceed.
+the horde is slow. your ROP chain is not.
+writeup or it didn't happen.
+the vault opens for those who read robots.txt.
+patience. the hash will crack.
+if it compiles, it's probably exploitable.
+dust storm incoming. save your notes.
+no logs survived the fallout.
+every great breach starts with a typo.
+the radio is silent. the netcat is listening.
+the wasteland rewards the curious.

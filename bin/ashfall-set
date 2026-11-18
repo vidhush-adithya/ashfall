@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""ashfall-set — change ASHFALL look settings (used by the hub, works from a terminal too).
+
+  ashfall-set theme <ashfall|winter|phosphor|redzone|dust|bog>
+  ashfall-set style <outline|bunker|plate>     window style
+  ashfall-set gaps <0-32>
+  ashfall-set radius <0-16>                    window corner radius
+  ashfall-set animations <on|off>
+  ashfall-set lowpower <on|off>                no animations, no shadows, no fading
+  ashfall-set mascot <on|off>                  Ash-chan greeting + notification faces
+Every niri change is checked with `niri validate` first; a bad edit is never saved.
+"""
+import os, re, shutil, subprocess, sys, tempfile
+
+HOME = os.path.expanduser("~")
+CFG = os.environ.get("XDG_CONFIG_HOME", os.path.join(HOME, ".config"))
+NIRI = os.path.join(CFG, "niri/config.kdl")
+AF = os.path.join(CFG, "ashfall")
+
+
+def block(t, header):
+    """(start, end) of the {...} body that follows `header {` (first match), or None."""
+    m = re.search(r"(^|\n)\s*" + re.escape(header) + r"\s*\{", t)
+    if not m:
+        return None
+    i = m.end(); depth = 1
+    while i < len(t) and depth:
+        if t[i] == "{": depth += 1
+        elif t[i] == "}": depth -= 1
+        i += 1
+    return m.end(), i - 1
+
+
+def in_block(t, path, fn):
+    """apply fn to the body of nested block path, e.g. ['layout','border']"""
+    off = 0; seg = t
+    for h in path:
+        b = block(seg, h)
+        if not b:
+            return t
+        off += b[0]; seg = seg[b[0]:b[1]]
+    return t[:off] + fn(seg) + t[off + len(seg):]
+
+
+def set_line(body, key, value):
+    if re.search(r"^([ \t]*)" + re.escape(key) + r"\b.*$", body, re.M):
+        return re.sub(r"^([ \t]*)" + re.escape(key) + r"\b.*$", lambda m: m.group(1) + f"{key} {value}", body, count=1, flags=re.M)
+    return "\n        " + f"{key} {value}" + body
+
+
+def flag(body, word, on):
+    body = re.sub(r"^[ \t]*" + word + r"[ \t]*;?[ \t]*\n", "", body, flags=re.M)
+    return ("\n        " + word + body) if on else body
+
+
+def marker(t, name, value):
+    t = re.sub(r"\n// ashfall-" + name + r":.*", "", t)
+    return t.rstrip("\n") + f"\n// ashfall-{name}: {value}\n"
+
+
+def gaps(t, n): return in_block(t, ["layout"], lambda b: set_line(b, "gaps", n))
+def radius(t, n): return re.sub(r"geometry-corner-radius\s+\d+", f"geometry-corner-radius {n}", t)
+def border_w(t, n): return in_block(t, ["layout", "border"], lambda b: set_line(b, "width", n))
+def shadow(t, on): return in_block(t, ["layout", "shadow"], lambda b: flag(flag(b, "off", False), "on", True) if on else flag(flag(b, "on", False), "off", True))
+def anim(t, on): return in_block(t, ["animations"], lambda b: flag(b, "off", not on))
+def inactive_opacity(t, v):
+    return re.sub(r"(match is-active=false\s*\n\s*opacity\s+)[0-9.]+", lambda m: m.group(1) + v, t)
+
+
+def edit_niri(fn):
+    t = open(NIRI).read()
+    n = fn(t)
+    if n == t:
+        return
+    if shutil.which("niri"):
+        with tempfile.NamedTemporaryFile("w", suffix=".kdl", delete=False) as f:
+            f.write(n); tmp = f.name
+        r = subprocess.run(["niri", "validate", "-c", tmp], capture_output=True, text=True)
+        os.unlink(tmp)
+        if r.returncode != 0:
+            sys.exit("niri rejected the change, nothing saved:\n" + r.stderr[-800:])
+    shutil.copy(NIRI, NIRI + ".ashfall-prev")
+    open(NIRI, "w").write(n)  # niri reloads it live
+
+
+STYLES = {
+    "outline": lambda t: inactive_opacity(shadow(border_w(gaps(t, 10), 2), True), "0.93"),
+    "bunker":  lambda t: inactive_opacity(shadow(border_w(gaps(t, 0), 1), False), "1.0"),
+    "plate":   lambda t: inactive_opacity(shadow(border_w(gaps(t, 16), 4), True), "0.8"),
+}
+
+
+def main():
+    a = sys.argv[1:]
+    if len(a) < 2:
+        print(__doc__); return
+    k, v = a[0], a[1].lower()
+    onoff = v in ("on", "1", "true", "yes")
+    if k == "theme":
+        os.execvp("ashfall-theme", ["ashfall-theme", v])
+    elif k == "style" and v in STYLES:
+        edit_niri(lambda t: marker(STYLES[v](t), "style", v))
+    elif k == "gaps":
+        edit_niri(lambda t: gaps(t, max(0, min(32, int(v)))))
+    elif k == "radius":
+        edit_niri(lambda t: radius(t, max(0, min(16, int(v)))))
+    elif k == "animations":
+        edit_niri(lambda t: anim(t, onoff))
+    elif k == "lowpower":
+        edit_niri(lambda t: marker(inactive_opacity(shadow(anim(t, not onoff), not onoff), "1.0" if onoff else "0.93"),
+                                   "lowpower", "on" if onoff else "off"))
+    elif k == "mascot":
+        p = os.path.join(AF, "no-mascot")
+        if onoff and os.path.exists(p): os.unlink(p)
+        if not onoff: os.makedirs(AF, exist_ok=True); open(p, "w").close()
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main()

@@ -4,11 +4,15 @@
 # Custom formats: export FLAG_RE='HTB\{[^}]+\}' in your shell profile.
 RE="${FLAG_RE:-[A-Za-z0-9_]{2,20}\{[^}[:space:]]{3,200}\}}"
 flags=$(cliphist list | cut -f2- | grep -oE "$RE" | awk '!s[$0]++' | head -50)
-[ -z "$flags" ] && { notify-send -a FLAG "no flags in clipboard history"; exit 1; }
+[ -z "$flags" ] && { ashfall-notify panic "no flags in clipboard history" "copy the output that has the flag first" 2>/dev/null || notify-send -a FLAG "no flags in clipboard history"; exit 1; }
 pick=$(printf '%s\n' "$flags" | fuzzel --dmenu --prompt "  flag ❯ " --lines 8) || exit 0
 [ -z "$pick" ] && exit 0
 printf '%s' "$pick" | wl-copy
 log="$HOME/ctf/current/flags.txt"; [ -d "$HOME/ctf/current" ] || log="$HOME/ctf/flags.txt"
 mkdir -p "$(dirname "$log")"
 grep -qxF "$pick" "$log" 2>/dev/null || echo "$pick" >> "$log"
-notify-send -a FLAG "flag secured" "$pick"
+# Ash-chan is smug if you solved it in under 30 minutes
+mood=flag; title="FLAG GET~"
+st="$HOME/ctf/current/.started"
+if [ -f "$st" ] && [ $(( $(date +%s) - $(stat -c %Y "$st") )) -lt 1800 ]; then mood=smug; title="EZ. flag in under 30 min"; fi
+ashfall-notify "$mood" "$title" "$pick" 2>/dev/null || notify-send -a FLAG "flag secured" "$pick"

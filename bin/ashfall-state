@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""ashfall-state — one JSON snapshot for the ASHFALL panels (palette, challenge, VPN, flags, settings)."""
+import json, os, re, subprocess, time
+
+HOME = os.path.expanduser("~")
+CFG = os.environ.get("XDG_CONFIG_HOME", os.path.join(HOME, ".config"))
+AF = os.path.join(CFG, "ashfall")
+
+
+def jload(p, d):
+    try:
+        return json.load(open(p))
+    except Exception:
+        return d
+
+
+def ip_of(iface):
+    try:
+        r = subprocess.run(["ip", "-4", "-o", "addr", "show", iface], capture_output=True, text=True, timeout=2)
+    except Exception:
+        return ""
+    m = re.search(r"inet (\d+\.\d+\.\d+\.\d+)", r.stdout)
+    return m.group(1) if m else ""
+
+
+def vpn():
+    for i in ("tun0", "tun1", "wg0"):
+        a = ip_of(i)
+        if a:
+            return {"up": True, "iface": i, "ip": a}
+    return {"up": False, "iface": "", "ip": ""}
+
+
+def profile():
+    for d in (os.path.join(HOME, "ctf/vpn"), os.path.join(HOME, "Downloads")):
+        if os.path.isdir(d):
+            fs = [os.path.join(d, f) for f in os.listdir(d) if f.endswith(".ovpn")]
+            if fs:
+                return os.path.basename(max(fs, key=os.path.getmtime))
+    return ""
+
+
+def challenge():
+    cur = os.path.join(HOME, "ctf/current")
+    if not os.path.islink(cur) and not os.path.isdir(cur):
+        return {}
+    path = os.path.realpath(cur)
+    if not os.path.isdir(path):
+        return {}
+    base = os.path.basename(path)
+    cat, _, name = base.partition("-")
+    if not name:
+        cat, name = "", base
+    started = os.path.join(path, ".started")
+    t0 = os.path.getmtime(started) if os.path.exists(started) else os.path.getctime(path)
+    flags = []
+    fp = os.path.join(path, "flags.txt")
+    if os.path.exists(fp):
+        flags = [l.strip() for l in open(fp) if l.strip()][-3:]
+    return {"name": name, "category": cat, "event": os.path.basename(os.path.dirname(path)),
+            "minutes": int((time.time() - t0) // 60), "path": path, "flags": flags}
+
+
+def niri_settings():
+    p = os.path.join(CFG, "niri/config.kdl")
+    s = {"gaps": 10, "radius": 3, "style": "outline", "animations": True, "lowpower": False}
+    try:
+        t = open(p).read()
+    except Exception:
+        return s
+    m = re.search(r"^\s*gaps\s+(\d+)", t, re.M)
+    if m: s["gaps"] = int(m.group(1))
+    m = re.search(r"geometry-corner-radius\s+(\d+)", t)
+    if m: s["radius"] = int(m.group(1))
+    m = re.search(r"animations\s*\{([^}]*)", t)
+    if m and re.search(r"^\s*off\s*$", m.group(1), re.M): s["animations"] = False
+    m = re.search(r"//\s*ashfall-style:\s*(\w+)", t)
+    if m: s["style"] = m.group(1)
+    s["lowpower"] = bool(re.search(r"//\s*ashfall-lowpower:\s*on", t))
+    return s
+
+
+st = jload(os.path.join(AF, "state.json"), {})
+out = {
+    "palette": jload(os.path.join(AF, "palette.json"), {}),
+    "theme": st.get("theme", "ashfall"),
+    "themes": [{"id": k, "name": v["name"]} for k, v in jload(os.path.join(AF, "themes.json"), {}).items() if not k.startswith("_")],
+    "wallpaper": st.get("wallpaper", ""),
+    "challenge": challenge(),
+    "vpn": vpn() | {"profile": profile()},
+    "settings": niri_settings() | {"mascot": not os.path.exists(os.path.join(AF, "no-mascot"))},
+    "home": HOME,
+}
+print(json.dumps(out))

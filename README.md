@@ -15,6 +15,27 @@ git clone https://github.com/vidhush-adithya/ashfall.git && cd ashfall
 ```
 The script backs up your existing configs to `~/.config/ashfall-backup-<date>/` first. It only **appends** one line to `~/.zshrc`, and it runs `niri validate` at the end.
 
+## Monolith update — panels, themes, wallpapers, toys, Ash-chan
+Nothing new runs in the background: panels start when you press their key and exit when closed.
+
+| Key / command | What it does |
+|---|---|
+| `Super+A` | **CTF panel** — then one plain key: `N` new · `F` flag · `R` revshells · `O` notes · `T` terminal · `C` copy IP · `V` VPN on/off · `L` listener · `Esc` |
+| `Super+Alt+S` | **Hub** — theme (keys 1–6), window style, gaps, corners, low-power mode, mascot |
+| `Super+Alt+W` | **Wallpaper picker** — ← → browse, Enter = wallpaper + matching theme, Shift+Enter = wallpaper only |
+| `ashfall-theme <name>` | ashfall · winter · phosphor · redzone · dust · bog |
+| `ashfall-wall set/next/random` | wallpapers (12 originals; add your own in `~/Pictures/Wallpapers`) |
+| `ashfall-set …` | every hub setting from a terminal (`ashfall-set` lists them) |
+| `ctf-vpn` | toggle OpenVPN with the newest `.ovpn` in `~/ctf/vpn/` or `~/Downloads` |
+| `toys` | picker: horde, zombiesay, ashsay, cmatrix, cbonsai, pipes, nms, cava, Cataclysm DDA, NetHack… |
+
+**Ash-chan** (original mascot) greets new kitty terminals and shows up in notifications with a mood:
+happy when a long command finishes, panicking when it fails, sleepy before the screen locks, star-eyed on a flag grab, smug if you solved it in under 30 min. Turn her off in the hub or with `ashfall-set mascot off`.
+
+**Updating** keeps your niri edits: `./install.sh` patches an existing ASHFALL niri config (adds the new keys, wallpaper restore, sleepy warning) instead of replacing it, and validates the result. Without Quickshell the panel keys fall back to fuzzel menus.
+
+`--no-toys` skips the toys & games (Cataclysm DDA is the big one).
+
 ## Workspaces (the CTF board)
 | Key | Workspace | Auto-opens here |
 |---|---|---|
@@ -67,7 +88,11 @@ Custom flag format: `export FLAG_RE='flag\{[^}]+\}'` in `~/.zshrc`.
 | `config/ashfall/ashfall.zsh`, `config/starship.toml` | shell layer with CTF helpers, prompt |
 | `bin/` | `ctf-new`, `ctf-notes`, `ctf-ip`, `flag-grab`, `revsh`, `ashfall-clip`, `ashfall-power` |
 | `wallpapers/` | original ASHFALL wallpaper + lock image |
-| `tools/` | Python scripts that generate the wallpaper and preview |
+| `config/quickshell/ashfall/` | CTF panel, hub, wallpaper picker (QML, on demand) |
+| `config/ashfall/templates`, `themes.json` | the six colour themes |
+| `wallpapers/walls/` | 12 original 4K wallpapers |
+| `assets/ashchan/` | Ash-chan pixel sprites |
+| `tools/` | generators for the wallpapers, themes and Ash-chan |
 
 ## Palette
 | ash | soot | slag | bone | rust | ochre | moss | blood |

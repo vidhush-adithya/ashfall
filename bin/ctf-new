@@ -87,5 +87,6 @@ EOF
 fi
 
 ln -sfn "$dir" "$ROOT/current"
-notify-send -a ASHFALL "challenge armed" "$dir" 2>/dev/null || true
+[ -f "$dir/.started" ] || touch "$dir/.started"   # the CTF panel uses this for "on it for 1h 12m"
+ashfall-notify neutral "challenge armed" "$dir" 2>/dev/null || notify-send -a ASHFALL "challenge armed" "$dir" 2>/dev/null || true
 if [ -t 1 ]; then echo "$dir"; else kitty -d "$dir" & fi

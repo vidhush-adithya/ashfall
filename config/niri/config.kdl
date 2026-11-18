@@ -122,11 +122,11 @@ screenshot-path "~/Pictures/Screenshots/ashfall_%Y-%m-%d_%H-%M-%S.png"
 // ── startup ─────────────────────────────────────────────────────────
 spawn-at-startup "waybar"
 spawn-at-startup "mako"
-spawn-sh-at-startup "swaybg -m fill -i ~/.local/share/ashfall/ashfall.png"
+spawn-sh-at-startup "~/.local/bin/ashfall-wall restore"
 spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
 spawn-sh-at-startup "wl-paste --type image --watch cliphist store"
-spawn-sh-at-startup "swayidle -w timeout 600 'swaylock -f' timeout 900 'niri msg action power-off-monitors' before-sleep 'swaylock -f'"
+spawn-sh-at-startup "swayidle -w timeout 540 '~/.local/bin/ashfall-notify sleepy zzz…' timeout 600 'swaylock -f' timeout 900 'niri msg action power-off-monitors' before-sleep 'swaylock -f'"
 
 // ── named workspaces: the CTF board ─────────────────────────────────
 workspace "recon"
@@ -374,4 +374,9 @@ binds {
     Mod+V       { toggle-window-floating; }
     Mod+Shift+V { switch-focus-between-floating-and-tiling; }
     Mod+W { toggle-column-tabbed-display; }
+
+    // ── ASHFALL panels (run only while open) ─────────────────────
+    Mod+A hotkey-overlay-title="CTF panel (then one key)" { spawn-sh "~/.local/bin/ashfall-panel ctf"; }
+    Mod+Alt+S hotkey-overlay-title="ASHFALL hub" { spawn-sh "~/.local/bin/ashfall-panel hub"; }
+    Mod+Alt+W hotkey-overlay-title="Wallpaper + theme picker" { spawn-sh "~/.local/bin/ashfall-panel walls"; }
 }

@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# toys — pick a terminal toy. They only run while open, so they cost nothing otherwise.
+list=(
+  "horde|zombie horde shambling across the screen (any key scatters)|horde -n 10"
+  "zombiesay|a zombie says something wise|zombiesay"
+  "ashsay|Ash-chan says something|ashsay"
+  "fastfetch|system card with Ash-chan|fastfetch -c $HOME/.config/fastfetch/ashfall.jsonc"
+  "cmatrix|falling code (theme-coloured, not neon)|cmatrix -b -u 6"
+  "cbonsai|grow a bonsai tree live|cbonsai -l -i -t 0.04"
+  "pipes.sh|endless pipes|pipes.sh -t 3 -p 5"
+  "asciiquarium|a fish tank|asciiquarium"
+  "nms|'Sneakers' decrypt effect on a random line|shuf -n1 $HOME/.local/share/ashfall/fortunes.txt | nms -a"
+  "hollywood|fake busy-hacker split screen (Ctrl+C to stop)|hollywood"
+  "genact|fake activity generator (Ctrl+C to stop)|genact"
+  "cava|audio visualiser for whatever is playing|cava"
+  "tty-clock|big terminal clock|tty-clock -s -c -C 3"
+  "cataclysm|Cataclysm: Dark Days Ahead — zombie survival game|cataclysm"
+  "nethack|classic dungeon crawler full of monsters|nethack"
+  "sl|a steam locomotive (for when you typo ls)|sl"
+)
+rows=""
+for e in "${list[@]}"; do
+  IFS='|' read -r name desc cmd <<<"$e"
+  bin=${cmd%% *}; [ "$name" = nms ] && bin=nms
+  if command -v "$bin" >/dev/null; then mark=" "; else mark="✗"; fi
+  rows+=$(printf '%s %-13s %s' "$mark" "$name" "$desc")$'\n'
+done
+pick=$(printf '%s' "$rows" | fzf --prompt='toys ❯ ' --header='✗ = not installed (run install.sh)' --reverse --height=60%) || exit 0
+name=$(awk '{print ($1=="✗") ? $2 : $1}' <<<"$pick")
+for e in "${list[@]}"; do
+  IFS='|' read -r n desc cmd <<<"$e"
+  if [ "$n" = "$name" ]; then
+    [[ $pick == ✗* ]] && { echo "$n isn't installed — run ./install.sh from your ashfall folder"; exit 1; }
+    clear; eval "$cmd"; exit
+  fi
+done

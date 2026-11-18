@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# ashsay [mood] "text"  — Ash-chan says something. moods: neutral happy panic sleepy smug flag
+# no text → a random wasteland one-liner.
+moods="neutral happy panic sleepy smug flag"
+mood=neutral; case " $moods " in *" ${1:-} "*) mood="$1"; shift;; esac
+text="${*:-$(shuf -n1 "$HOME/.local/share/ashfall/fortunes.txt" 2>/dev/null || echo 'on duty.')}"
+mapfile -t lines < <(printf '%s\n' "$text" | fold -s -w 44 | sed 's/ *$//')
+w=0; for l in "${lines[@]}"; do (( ${#l} > w )) && w=${#l}; done
+bar=$(printf '%*s' $((w + 2)) '' | tr ' ' '-')
+printf ' %s\n' "${bar//-/_}"
+if (( ${#lines[@]} == 1 )); then printf '< %-*s >\n' "$w" "${lines[0]}"
+else for i in "${!lines[@]}"; do
+  l='|'; r='|'; (( i == 0 )) && { l='/'; r='\'; }; (( i == ${#lines[@]} - 1 )) && { l='\'; r='/'; }
+  printf '%s %-*s %s\n' "$l" "$w" "${lines[$i]}" "$r"; done
+fi
+printf ' %s\n   \\\n    \\\n' "$bar"
+img="$HOME/.local/share/ashfall/ashchan/ashchan-$mood.png"
+if [ "$TERM" = xterm-kitty ] && [ -z "${TMUX:-}" ] && [ -f "$img" ] && command -v kitten >/dev/null; then
+  kitten icat --align left "$img" 2>/dev/null
+else
+  cat <<'ART'
+       _____
+     _/  ☢  \_
+    |_________|
+    ( ^  ‿  ^ )
+    /|  ___  |\
+     |_|   |_|
+ART
+fi

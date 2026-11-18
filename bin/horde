@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+"""horde — an ASCII zombie horde shambles across your terminal.
+
+  horde            watch them; any key makes them scatter, q quits
+  horde -n 12      how many zombies
+  horde --saver    screensaver mode: the first key quits immediately
+Light: ~8 frames a second, sleeps between frames.
+"""
+import curses, random, sys, time
+
+SPRITES = [
+    [" (x_x) ", "--|--~ ", "  |\\   ", " /  \\  "],
+    [" (o_O) ", "~--|-- ", "   /|  ", "  /  | "],
+    [" (;_;) ", " -|--  ", "  /\\   ", " /  \\  "],
+    [" (X_X) ", "~-|-~  ", "  |    ", " / \\   "],
+]
+GROANS = ["brains…", "braaains", "nmap…", "root…", "uhhh", "shells…", "flag…", "grrr", "…port 80…"]
+
+
+def main(scr, n, saver):
+    curses.curs_set(0)
+    scr.nodelay(True)
+    curses.start_color()
+    try:
+        curses.use_default_colors()
+        bg = -1
+    except curses.error:
+        bg = curses.COLOR_BLACK
+    curses.init_pair(1, curses.COLOR_GREEN, bg)    # bodies (moss in ASHFALL palettes)
+    curses.init_pair(2, curses.COLOR_YELLOW, bg)   # eyes (ochre)
+    curses.init_pair(3, 8 if curses.COLORS > 8 else curses.COLOR_WHITE, bg)  # ground, groans
+    H, W = scr.getmaxyx()
+    ground = H - 3
+    zs = []
+    for i in range(n):
+        lane = random.randint(0, max(0, ground - 6 - 4))
+        zs.append({"x": random.uniform(-W, W), "y": lane, "s": random.uniform(0.15, 0.55),
+                   "spr": random.randrange(len(SPRITES)), "t": random.random() * 10, "say": None, "say_t": 0})
+    scatter = 0.0
+    while True:
+        k = scr.getch()
+        if k != -1:
+            if saver or k in (ord("q"), 27):
+                return
+            if scatter == 0:
+                scatter = time.time()
+        if scatter and time.time() - scatter > 2.2:
+            return
+        H, W = scr.getmaxyx()
+        ground = H - 3
+        scr.erase()
+        for z in zs:
+            sp = SPRITES[z["spr"]]
+            z["t"] += 1
+            if scatter:
+                z["x"] += 3.5 if z["x"] > W / 2 else -3.5
+            else:
+                z["x"] += z["s"] * (1 if (z["t"] // 3) % 4 else 0.2)   # shamble: stop-start gait
+                if z["x"] > W + 8:
+                    z["x"] = -random.randint(8, W // 2)
+                if z["say"] is None and random.random() < 0.004:
+                    z["say"], z["say_t"] = random.choice(GROANS), 30
+            frame = sp if (z["t"] // 4) % 2 else [sp[0], sp[1], sp[3], sp[2]]
+            for dy, row in enumerate(frame):
+                y = z["y"] + dy
+                for dx, ch in enumerate(row):
+                    x = int(z["x"]) + dx
+                    if ch != " " and 0 <= x < W - 1 and 0 <= y < ground:
+                        attr = curses.color_pair(2) | curses.A_BOLD if ch in "xoOX;" and dy == 0 else curses.color_pair(1)
+                        try:
+                            scr.addch(y, x, ch, attr)
+                        except curses.error:
+                            pass
+            if z["say"] and z["say_t"] > 0:
+                z["say_t"] -= 1
+                x = int(z["x"]) + 7
+                if 0 <= x < W - len(z["say"]) - 1 and 0 <= z["y"] < ground:
+                    try:
+                        scr.addstr(max(0, z["y"] - 1), x, z["say"], curses.color_pair(3))
+                    except curses.error:
+                        pass
+                if z["say_t"] == 0:
+                    z["say"] = None
+        for x in range(W - 1):
+            try:
+                scr.addch(ground, x, "_" if (x * 7) % 11 else ".", curses.color_pair(3))
+                if x % 2 == 0:
+                    scr.addch(ground + 1, x, "|" if x % 4 == 0 else "=", curses.color_pair(3))
+            except curses.error:
+                pass
+        hint = "they scatter…" if scatter else "any key: scatter · q: quit"
+        try:
+            scr.addstr(H - 1, 1, hint[: W - 2], curses.color_pair(3))
+        except curses.error:
+            pass
+        scr.refresh()
+        time.sleep(0.12)
+
+
+if __name__ == "__main__":
+    n = 8
+    if "-n" in sys.argv:
+        try:
+            n = max(1, min(60, int(sys.argv[sys.argv.index("-n") + 1])))
+        except (IndexError, ValueError):
+            pass
+    try:
+        curses.wrapper(main, n, "--saver" in sys.argv)
+    except KeyboardInterrupt:
+        pass

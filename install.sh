@@ -5,13 +5,14 @@
 # ║    ./install.sh            full install             ║
 # ║    ./install.sh --no-ctf   desktop only             ║
 # ║    ./install.sh --dots     configs only, no pkgs    ║
+# ║    ./install.sh --no-toys  skip toys & games        ║
 # ╚════════════════════════════════════════════════════╝
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
 BACKUP="$HOME/.config/ashfall-backup-$(date +%Y%m%d-%H%M%S)"
-WITH_CTF=1; WITH_PKGS=1
-for a in "$@"; do case "$a" in --no-ctf) WITH_CTF=0;; --dots) WITH_PKGS=0;; esac; done
+WITH_CTF=1; WITH_PKGS=1; WITH_TOYS=1
+for a in "$@"; do case "$a" in --no-ctf) WITH_CTF=0;; --dots) WITH_PKGS=0;; --no-toys) WITH_TOYS=0;; esac; done
 
 c1=$'\e[38;2;139;90;60m'; c2=$'\e[38;2;110;102;87m'; c3=$'\e[38;2;154;131;72m'; cr=$'\e[38;2;160;82;63m'; r=$'\e[0m'
 say()  { echo "${c1}▌${r} $*"; }
@@ -37,6 +38,8 @@ DESKTOP=(
   zsh zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search zsh-completions pkgfile
   starship fzf zoxide eza bat
   ripgrep fd jq neovim yazi btop fastfetch firefox unzip p7zip
+  # panels (run only while open) + scripts
+  quickshell qt6-declarative python python-pillow
 )
 CTF=(
   # pwn / rev
@@ -53,6 +56,9 @@ CTF=(
   python-requests python-beautifulsoup4 python-pip python-pipx docker docker-compose
 )
 AUR_CTF=(burpsuite seclists stegseek volatility3 wordlists)
+# toys & games: only run while open
+TOYS=(cmatrix cbonsai asciiquarium cava tty-clock sl figlet nethack cataclysm-dda genact)
+AUR_TOYS=(pipes.sh hollywood no-more-secrets)
 
 install_pkgs() {
   local repo=() aur=() p
@@ -85,11 +91,17 @@ if ((WITH_PKGS)); then
     install_pkgs "${CTF[@]}"
     AUR_QUEUE+=("${AUR_CTF[@]}")
   fi
+  if ((WITH_TOYS)); then
+    install_pkgs "${TOYS[@]}"
+    AUR_QUEUE+=("${AUR_TOYS[@]}")
+  fi
   if ((${#AUR_QUEUE[@]})); then
     say "AUR: ${AUR_QUEUE[*]}"
     H=$(aur_helper)
     if [ -n "${H:-}" ]; then
-      "$H" -S --needed --noconfirm "${AUR_QUEUE[@]}" || warn "some AUR packages failed — install them later with: $H -S <pkg>"
+      failed=()
+      for p in "${AUR_QUEUE[@]}"; do "$H" -S --needed --noconfirm "$p" >/dev/null 2>&1 || failed+=("$p"); done
+      ((${#failed[@]})) && warn "AUR packages that didn't install (optional): ${failed[*]}"
     else
       warn "skipped AUR packages: ${AUR_QUEUE[*]}"
     fi
@@ -110,14 +122,21 @@ fi
 # ── configs (backup first) ──────────────────────────────────────────
 say "backing up existing configs → $BACKUP"
 mkdir -p "$BACKUP"
-for d in niri waybar fuzzel mako kitty swaylock btop ashfall starship.toml; do
+for d in niri waybar fuzzel mako kitty swaylock btop ashfall starship.toml quickshell/ashfall fastfetch; do
   [ -e "$CFG/$d" ] && cp -a "$CFG/$d" "$BACKUP/"
 done
 
 say "deploying configs"
 mkdir -p "$CFG" "$HOME/.local/bin" "$HOME/.local/share/ashfall" "$HOME/Pictures/Screenshots" "$HOME/ctf"
-cp -a "$HERE/config/niri" "$HERE/config/waybar" "$HERE/config/fuzzel" "$HERE/config/mako" \
-      "$HERE/config/kitty" "$HERE/config/swaylock" "$HERE/config/ashfall" "$CFG/"
+# niri: an existing ASHFALL config is UPDATED in place (keeps your monitors/keys); anything else is replaced
+if [ -f "$CFG/niri/config.kdl" ] && grep -q "A S H F A L L" "$CFG/niri/config.kdl"; then
+  python3 "$HERE/bin/ashfall-migrate" "$CFG/niri/config.kdl" || warn "niri config left unchanged"
+else
+  mkdir -p "$CFG/niri" && cp "$HERE/config/niri/config.kdl" "$CFG/niri/config.kdl"
+fi
+cp -a "$HERE/config/waybar" "$HERE/config/fuzzel" "$HERE/config/mako" \
+      "$HERE/config/kitty" "$HERE/config/swaylock" "$HERE/config/ashfall" "$HERE/config/fastfetch" "$CFG/"
+mkdir -p "$CFG/quickshell" && rm -rf "$CFG/quickshell/ashfall" && cp -a "$HERE/config/quickshell/ashfall" "$CFG/quickshell/"
 mkdir -p "$CFG/btop/themes" && cp "$HERE/config/btop/themes/ashfall.theme" "$CFG/btop/themes/"
 if [ -f "$CFG/btop/btop.conf" ]; then
   sed -i 's/^color_theme = .*/color_theme = "ashfall"/' "$CFG/btop/btop.conf"
@@ -128,8 +147,14 @@ cp "$HERE/config/starship.toml" "$CFG/starship.toml"
 install -m 755 "$HERE"/bin/* "$HOME/.local/bin/"
 chmod +x "$CFG/waybar/scripts/"*.sh
 cp "$HERE"/wallpapers/*.png "$HOME/.local/share/ashfall/"
+mkdir -p "$HOME/.local/share/ashfall/walls" "$HOME/.local/share/ashfall/ashchan" "$HOME/Pictures/Wallpapers"
+cp "$HERE"/wallpapers/walls/*.jpg "$HOME/.local/share/ashfall/walls/"
+cp "$HERE"/assets/ashchan/*.png "$HOME/.local/share/ashfall/ashchan/"
+cp "$HERE"/share/fortunes.txt "$HOME/.local/share/ashfall/"
 
-sed -i "s|~/.local/share/ashfall/ashfall-lock.png|$HOME/.local/share/ashfall/ashfall-lock.png|" "$CFG/swaylock/config"
+# colours: render every app from the active theme (keeps your theme across updates)
+theme=$(python3 -c "import json;print(json.load(open('$CFG/ashfall/state.json')).get('theme','ashfall'))" 2>/dev/null || echo ashfall)
+PATH="$HOME/.local/bin:$PATH" python3 "$HOME/.local/bin/ashfall-theme" "$theme" --no-reload >/dev/null && say "theme: $theme"
 
 # zsh: append one source line, never overwrite the user's .zshrc
 touch "$HOME/.zshrc"
@@ -164,5 +189,6 @@ ${c2}  backup of your old configs: $BACKUP
   if you're inside niri: it reloads on its own — restart waybar with  pkill waybar; waybar &
   otherwise log out and pick "niri" at your display manager (or run  niri-session  from a TTY).
   groups changed (wireshark/docker) → log out & in once.
-  press  Super+Shift+/  for every hotkey.${r}
+  press  Super+Shift+/  for every hotkey.
+  new: Super+A  CTF panel (then one key) · Super+Alt+S  hub · Super+Alt+W  wallpapers · type  toys${r}
 EOF

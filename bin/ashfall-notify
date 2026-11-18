@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# ashfall-notify <mood> <title> [body] [urgency]
+# moods: neutral happy panic sleepy smug flag — Ash-chan's face rides along unless the mascot is off.
+mood="${1:-neutral}"; title="${2:-ASHFALL}"; body="${3:-}"; urg="${4:-normal}"
+icon="$HOME/.local/share/ashfall/ashchan/icon-$mood.png"
+args=(-a ASHFALL -u "$urg")
+if [ -f "$icon" ] && [ ! -e "${XDG_CONFIG_HOME:-$HOME/.config}/ashfall/no-mascot" ] && [ -z "$ASHFALL_NO_MASCOT" ]; then
+  args+=(-i "$icon")
+fi
+exec notify-send "${args[@]}" "$title" "$body"

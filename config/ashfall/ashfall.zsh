@@ -1,11 +1,13 @@
 # ASHFALL — zsh layer (sourced from ~/.zshrc). Safe to edit.
+# theme colours ($AF_*) come from colors.zsh, written by ashfall-theme
+[ -f ~/.config/ashfall/colors.zsh ] && source ~/.config/ashfall/colors.zsh
 export EDITOR=nvim
 export CTF="$HOME/ctf"
 export WL=/usr/share/seclists
 export ROCKYOU=/usr/share/wordlists/rockyou.txt
 export PATH="$HOME/.local/bin:$PATH"
 export BAT_THEME=ansi
-export FZF_DEFAULT_OPTS="--color=bg:#0c0b09,bg+:#2a2620,fg:#a89f8c,fg+:#c2b8a3,hl:#9a8348,hl+:#ad9659,border:#4a443a,prompt:#8b5a3c,pointer:#8b5a3c,marker:#5d6a48,info:#6e6657 --border=sharp --height=40%"
+export FZF_DEFAULT_OPTS="--color=bg:${AF_bg},bg+:${AF_line},fg:${AF_fg},fg+:${AF_hi},hl:${AF_accent2},hl+:${AF_c11},border:${AF_grit},prompt:${AF_accent},pointer:${AF_accent},marker:${AF_ok},info:${AF_dim} --border=sharp --height=40%"
 
 # ── history: huge, shared between terminals, timestamped ──
 HISTFILE=~/.zsh_history; HISTSIZE=200000; SAVEHIST=200000
@@ -31,7 +33,7 @@ zle -N _ashfall_copyline; bindkey '\ec' _ashfall_copyline
 # Ctrl+A: select the whole command line, like a text box. Then:
 #   type → replaces it · Backspace/Delete → clears it · Alt+C → copies it
 #   Ctrl+A again → unselect and jump to the start of the line (the old Ctrl+A)
-zle_highlight=(region:bg=#3a352c,fg=#c2b8a3)
+zle_highlight=("region:bg=${AF_line2},fg=${AF_hi}")
 _ashfall_select_all() {
   if (( REGION_ACTIVE )); then REGION_ACTIVE=0; CURSOR=0
   else MARK=0; CURSOR=${#BUFFER}; REGION_ACTIVE=1; fi
@@ -52,8 +54,8 @@ zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 zstyle ':completion:*' group-name ''
-zstyle ':completion:*:descriptions' format '%F{#8b5a3c}── %d ──%f'
-zstyle ':completion:*:warnings' format '%F{#6e6657}no matches%f'
+zstyle ':completion:*:descriptions' format "%F{${AF_accent}}── %d ──%f"
+zstyle ':completion:*:warnings' format "%F{${AF_dim}}no matches%f"
 zstyle ':completion:*' squeeze-slashes true
 zstyle ':completion:*' use-cache on; zstyle ':completion:*' cache-path ~/.cache/zcompcache
 zstyle ':completion:*:*:kill:*' menu yes select; zstyle ':completion:*:kill:*' force-list always
@@ -69,20 +71,20 @@ done
 if (( $+widgets[history-substring-search-up] )); then
   bindkey '^[[A' history-substring-search-up '^[OA' history-substring-search-up
   bindkey '^[[B' history-substring-search-down '^[OB' history-substring-search-down
-  HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='fg=#c2b8a3,bold,bg=#2a2620'
-  HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_NOT_FOUND='fg=#7a3329,bold'
+  HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND="fg=${AF_hi},bold,bg=${AF_line}"
+  HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_NOT_FOUND="fg=${AF_bad},bold"
   HISTORY_SUBSTRING_SEARCH_ENSURE_UNIQUE=1
 fi
 # muted syntax colours (default ones are too bright for ASHFALL)
 (( ${+ZSH_HIGHLIGHT_STYLES} )) || typeset -gA ZSH_HIGHLIGHT_STYLES
-ZSH_HIGHLIGHT_STYLES[command]='fg=#9a8348'; ZSH_HIGHLIGHT_STYLES[builtin]='fg=#9a8348'
-ZSH_HIGHLIGHT_STYLES[alias]='fg=#9a8348'; ZSH_HIGHLIGHT_STYLES[function]='fg=#9a8348'
-ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=#a0523f,bold'; ZSH_HIGHLIGHT_STYLES[precommand]='fg=#8b5a3c,underline'
-ZSH_HIGHLIGHT_STYLES[path]='fg=#a89f8c,underline'; ZSH_HIGHLIGHT_STYLES[single-quoted-argument]='fg=#74825d'
-ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=#74825d'; ZSH_HIGHLIGHT_STYLES[comment]='fg=#4a443a'
+ZSH_HIGHLIGHT_STYLES[command]="fg=${AF_accent2}"; ZSH_HIGHLIGHT_STYLES[builtin]="fg=${AF_accent2}"
+ZSH_HIGHLIGHT_STYLES[alias]="fg=${AF_accent2}"; ZSH_HIGHLIGHT_STYLES[function]="fg=${AF_accent2}"
+ZSH_HIGHLIGHT_STYLES[unknown-token]="fg=${AF_c9},bold"; ZSH_HIGHLIGHT_STYLES[precommand]="fg=${AF_accent},underline"
+ZSH_HIGHLIGHT_STYLES[path]="fg=${AF_fg},underline"; ZSH_HIGHLIGHT_STYLES[single-quoted-argument]="fg=${AF_c10}"
+ZSH_HIGHLIGHT_STYLES[double-quoted-argument]="fg=${AF_c10}"; ZSH_HIGHLIGHT_STYLES[comment]="fg=${AF_grit}"
 # "command not found" → tells you which package has it
 [ -f /usr/share/doc/pkgfile/command-not-found.zsh ] && source /usr/share/doc/pkgfile/command-not-found.zsh
-ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#4a443a'
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=${AF_grit}"
 command -v fzf >/dev/null && source <(fzf --zsh)
 command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
 command -v starship >/dev/null && eval "$(starship init zsh)"
@@ -160,8 +162,8 @@ _ashfall_precmd() {
   dt=$(( EPOCHSECONDS - _ashfall_t0 )); unset _ashfall_t0
   (( dt >= ASHFALL_NOTIFY_AFTER )) || return
   local what=${_ashfall_cmd[1,60]}
-  if (( rc == 0 )); then notify-send -a ASHFALL "done in ${dt}s" "$what" 2>/dev/null
-  else notify-send -a ASHFALL -u critical "failed ($rc) after ${dt}s" "$what" 2>/dev/null; fi
+  if (( rc == 0 )); then ashfall-notify happy "YATTA! done in ${dt}s" "$what" 2>/dev/null
+  else ashfall-notify panic "IT EXPLODED ($rc) after ${dt}s" "$what" critical 2>/dev/null; fi
 }
 zmodload zsh/datetime
 autoload -Uz add-zsh-hook
@@ -178,22 +180,30 @@ ctflog() {
 
 # ── help: list every ASHFALL shell helper ────────────────
 ashfall-help() {
-  print -P "%F{#8b5a3c}── keys ──%f"
+  print -P "%F{${AF_accent}}── keys ──%f"
   print "  Tab menu · ↑/↓ history search · Ctrl+R fuzzy history · Ctrl+T find file"
   print "  Ctrl+A select all (again: line start) · Alt+C copy line · Esc Esc add sudo · Ctrl+X Ctrl+E edit in nvim"
   print "  → accept suggestion · Ctrl+Alt+A copy ALL terminal output (kitty)"
-  print -P "%F{#8b5a3c}── navigation ──%f"
+  print -P "%F{${AF_accent}}── navigation ──%f"
   print "  c  ..  ...  d  cd -N  z <name>  mkcd <dir>"
-  print -P "%F{#8b5a3c}── ctf ──%f"
+  print -P "%F{${AF_accent}}── ctf ──%f"
   print "  cn notes myip nmapq nmapf fuzzdir vhosts serve listen revsh triage flagfind ex ctflog"
   print "  b64d b64e hexd hexe rot13 urld urle jwtd"
-  print -P "%F{#8b5a3c}── misc ──%f"
+  print -P "%F{${AF_accent}}── misc ──%f"
   print "  ports please venv bak h path reload   (long commands >${ASHFALL_NOTIFY_AFTER}s notify you)"
+  print -P "%F{${AF_accent}}── fun ──%f"
+  print "  toys  horde  ashsay  zombiesay   ·   Super+A ctf panel · Super+Alt+S hub · Super+Alt+W wallpapers"
 }
 
 # ── greeting ─────────────────────────────────────────────
+# Ash-chan's "on duty" card in kitty; a one-line greeting elsewhere (tmux, ssh, mascot off)
 if [[ -o interactive ]] && [[ -z "$ASHFALL_QUIET" ]] && [[ "$SHLVL" -le 2 ]]; then
+  if [[ "$TERM" == xterm-kitty && -z "$TMUX$SSH_CONNECTION$ASHFALL_NO_MASCOT" && ! -e ~/.config/ashfall/no-mascot ]] \
+     && (( $+commands[fastfetch] )) && [[ -f ~/.config/fastfetch/ashfall.jsonc ]]; then
+    fastfetch -c ~/.config/fastfetch/ashfall.jsonc 2>/dev/null
+  else
   _cur=$(readlink ~/ctf/current 2>/dev/null); _cur=${_cur:t}
-  print -P "%F{#4a443a}── ashfall ── %F{#6e6657}$(date '+%a %d %b %H:%M')%F{#4a443a} ── %F{#8b5a3c}${_cur:-no active challenge}%f  %F{#4a443a}(ashfall-help)%f"
+  print -P "%F{${AF_grit}}── ashfall ── %F{${AF_dim}}$(date '+%a %d %b %H:%M')%F{${AF_grit}} ── %F{${AF_accent}}${_cur:-no active challenge}%f  %F{${AF_grit}}(ashfall-help)%f"
   unset _cur
+  fi
 fi

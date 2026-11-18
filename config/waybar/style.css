@@ -1,15 +1,5 @@
-/* ASHFALL — waybar */
-@define-color ash    #0c0b09;
-@define-color soot   #14120f;
-@define-color char   #1d1a16;
-@define-color slag   #2a2620;
-@define-color grit   #4a443a;
-@define-color dust   #6e6657;
-@define-color bone   #a89f8c;
-@define-color rust   #8b5a3c;
-@define-color ochre  #9a8348;
-@define-color moss   #5d6a48;
-@define-color blood  #7a3329;
+/* ASHFALL — waybar (colours: colors.css, set by ashfall-theme) */
+@import "colors.css";
 
 * {
   font-family: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;

@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# ctf-vpn — toggle your CTF VPN (OpenVPN).
+#   ctf-vpn            up if down, down if up
+#   ctf-vpn up [file]  connect (default: newest .ovpn in ~/ctf/vpn, then ~/Downloads)
+#   ctf-vpn down
+#   ctf-vpn status
+# Asks for your password through the normal system prompt (polkit).
+set -u
+iface_up() { for i in tun0 tun1; do ip -4 -o addr show "$i" 2>/dev/null | grep -q inet && { echo "$i"; return 0; }; done; return 1; }
+profile() {
+  for d in "$HOME/ctf/vpn" "$HOME/Downloads"; do
+    f=$(ls -1t "$d"/*.ovpn 2>/dev/null | head -1); [ -n "$f" ] && { echo "$f"; return 0; }
+  done; return 1
+}
+say() { command -v ashfall-notify >/dev/null && ashfall-notify "$@" || notify-send -a ASHFALL "$2" "${3:-}"; }
+priv() { if [ -t 0 ]; then sudo "$@"; else pkexec "$@"; fi; }
+
+up() {
+  f="${1:-$(profile)}" || true
+  [ -z "${f:-}" ] && { say panic "no VPN profile" "put your .ovpn in ~/ctf/vpn/ (or ~/Downloads)"; exit 1; }
+  say neutral "VPN connecting…" "$(basename "$f")"
+  priv openvpn --config "$f" --daemon ashfall-vpn --writepid /run/ashfall-vpn.pid || { say panic "VPN failed to start" "$(basename "$f")"; exit 1; }
+  for _ in $(seq 1 40); do
+    if i=$(iface_up); then
+      ip=$(ip -4 -o addr show "$i" | awk '{print $4}' | cut -d/ -f1)
+      say happy "VPN up" "$i $ip — copied" ; printf '%s' "$ip" | wl-copy 2>/dev/null; exit 0
+    fi; sleep 0.5
+  done
+  say panic "VPN didn't come up in 20s" "check: journalctl -t ashfall-vpn"
+}
+down() {
+  priv pkill -x openvpn && say sleepy "VPN down" "" || say neutral "VPN was not running" ""
+}
+case "${1:-toggle}" in
+  up) shift; up "${1:-}";;
+  down) down;;
+  status) if i=$(iface_up); then echo "up $i"; else echo down; fi;;
+  *) if iface_up >/dev/null; then down; else up; fi;;
+esac

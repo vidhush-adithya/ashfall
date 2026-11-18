@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+"""ashfall-migrate [config.kdl] — bring an existing ASHFALL niri config up to date
+WITHOUT overwriting your own edits (monitors, keys you changed, rules you added).
+Idempotent: running it twice changes nothing the second time. Validates with `niri validate`
+and restores the original if niri rejects the result.
+"""
+import os, re, shutil, subprocess, sys
+
+HOME = os.path.expanduser("~")
+CFG = os.environ.get("XDG_CONFIG_HOME", os.path.join(HOME, ".config"))
+path = sys.argv[1] if len(sys.argv) > 1 else os.path.join(CFG, "niri/config.kdl")
+
+NEW_BINDS = [
+    ("Mod+A", 'Mod+A hotkey-overlay-title="CTF panel (then one key)" { spawn-sh "~/.local/bin/ashfall-panel ctf"; }'),
+    ("Mod+Alt+S", 'Mod+Alt+S hotkey-overlay-title="ASHFALL hub" { spawn-sh "~/.local/bin/ashfall-panel hub"; }'),
+    ("Mod+Alt+W", 'Mod+Alt+W hotkey-overlay-title="Wallpaper + theme picker" { spawn-sh "~/.local/bin/ashfall-panel walls"; }'),
+]
+
+
+def binds_block(t):
+    m = re.search(r"(^|\n)binds\s*\{", t)
+    if not m:
+        return None
+    i = m.end(); depth = 1
+    while i < len(t) and depth:
+        if t[i] == "{": depth += 1
+        elif t[i] == "}": depth -= 1
+        i += 1
+    return m.end(), i - 1  # body start, index of closing brace
+
+
+def bound(body, key):
+    return re.search(r"^\s*" + re.escape(key) + r"(\s|\{)", body, re.M) is not None
+
+
+def migrate(t):
+    notes = []
+    b = binds_block(t)
+    if b:
+        body = t[b[0]:b[1]]
+        add = []
+        for key, line in NEW_BINDS:
+            if "ashfall-panel" in line and line.split('"')[-2] in body:
+                continue  # already there
+            if bound(body, key):
+                notes.append(f"skipped {key}: you already use it for something else")
+                continue
+            add.append("    " + line)
+        if add:
+            ins = "\n    // ── ASHFALL panels (run only while open) ─────────────────────\n" + "\n".join(add) + "\n"
+            t = t[:b[1]] + ins + t[b[1]:]
+            notes.append(f"added {len(add)} panel key(s)")
+    # wallpaper: swaybg with a fixed image -> ashfall-wall restore (remembers your pick)
+    new = re.sub(r'^([ \t]*)spawn(-sh)?-at-startup\s+"swaybg"?[^\n]*$', r'\1spawn-sh-at-startup "~/.local/bin/ashfall-wall restore"', t, flags=re.M)
+    if new != t:
+        t = new; notes.append("wallpaper now restored by ashfall-wall")
+    # sleepy Ash-chan a minute before the screen locks
+    if "ashfall-notify sleepy" not in t:
+        new = re.sub(r'(spawn-sh-at-startup\s+"swayidle -w )', r"\1timeout 540 '~/.local/bin/ashfall-notify sleepy zzz…' ", t, count=1)
+        if new != t:
+            t = new; notes.append("added the 'locking in a minute' warning")
+    return t, notes
+
+
+def main():
+    if not os.path.exists(path):
+        sys.exit(f"no niri config at {path}")
+    orig = open(path).read()
+    t, notes = migrate(orig)
+    if t == orig:
+        print("niri config: already up to date"); return
+    shutil.copy(path, path + ".pre-migrate")
+    open(path, "w").write(t)
+    if shutil.which("niri"):
+        r = subprocess.run(["niri", "validate", "-c", path], capture_output=True, text=True)
+        if r.returncode != 0:
+            shutil.copy(path + ".pre-migrate", path)
+            sys.exit("niri rejected the update; your config was restored unchanged.\n" + r.stderr[-600:])
+    print("niri config updated: " + "; ".join(notes) + f"  (backup: {path}.pre-migrate)")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,27 @@
+// ASHFALL greeting card — Ash-chan on duty. Shown once per new terminal (see ashfall.zsh).
+// Colours are ANSI numbers, so they follow the active ASHFALL theme automatically.
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "kitty-direct",
+    "source": "~/.local/share/ashfall/ashchan/ashchan-neutral.png",
+    "width": 13,
+    "height": 7,
+    "padding": { "top": 0, "left": 1, "right": 3 }
+  },
+  "display": {
+    "separator": "  ",
+    "color": { "keys": "33", "title": "31", "output": "37", "separator": "90" },
+    "key": { "width": 11 }
+  },
+  "modules": [
+    { "type": "custom", "format": "\u001b[1;37mASH-CHAN\u001b[0;90m // on duty" },
+    { "type": "custom", "format": "\u001b[90m──────────────────────────" },
+    { "type": "command", "key": "operator", "text": "printf '%s@%s' \"$USER\" \"$(cat /etc/hostname 2>/dev/null || hostname)\"" },
+    { "type": "command", "key": "theme",    "text": "sed -n 's/.*\"theme\": *\"\\([a-z]*\\)\".*/\\1/p' ~/.config/ashfall/state.json 2>/dev/null | head -1 | grep . || echo ashfall" },
+    { "type": "command", "key": "vpn",      "text": "a=$(ip -4 -o addr show tun0 2>/dev/null | awk '{print $4}' | cut -d/ -f1); echo \"${a:-down}\"" },
+    { "type": "command", "key": "target",   "text": "c=$(readlink ~/ctf/current 2>/dev/null); echo \"${c##*/}\" | grep . || echo 'none · Super+A → N'" },
+    { "type": "uptime",  "key": "uptime" },
+    { "type": "memory",  "key": "memory", "format": "{used} / {total}" }
+  ]
+}
